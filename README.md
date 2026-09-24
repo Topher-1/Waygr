@@ -68,7 +68,7 @@ npm run dev
    - For local dev, you may disable “Confirm email” so sign-up is instant.
    - Set Site URL / redirect URLs to `NEXT_PUBLIC_APP_URL` and `/auth/callback`.
 3. Run migrations: `npm run db:migrate` (or apply `drizzle/*.sql` via Supabase SQL editor).
-4. Apply migrations through `drizzle/0004_accept_challenge_atomic.sql` (includes Step 2 settle RPC)
+4. Apply migrations through `drizzle/0005_accept_challenge_atomic_kickoff_where.sql` (includes accept RPC hotfix)
 5. Set `CRON_SECRET` in Supabase Edge Function secrets (required — jobs reject requests without a matching `x-cron-secret` header)
 6. Deploy Edge Functions: `poll-scores`, `settle`, `sweep` (`verify_jwt = false`; auth is `CRON_SECRET` only)
 7. Configure Supabase Cron (Dashboard → Integrations → Cron) with header `x-cron-secret: <CRON_SECRET>`:
