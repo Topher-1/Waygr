@@ -11,7 +11,7 @@ export type GamesQueryParams = {
 
 export type GamesQueryRejectReason = "invalid_league" | "invalid_range";
 
-const LEAGUES: League[] = ["nfl", "ncaaf", "nba", "ncaab"];
+const LEAGUES: League[] = ["nfl", "ncaaf", "nba", "ncaab", "mlb"];
 
 function parseDate(value: string | null, fallback: Date): Date {
   if (!value) return fallback;

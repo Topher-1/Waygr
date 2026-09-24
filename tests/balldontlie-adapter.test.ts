@@ -6,6 +6,7 @@ import {
   derivePeriod,
   deriveSeasonYear,
   enumerateDateRange,
+  mapBalldontlieGame,
   mapBalldontlieUpdate,
 } from '@/lib/scores/balldontlie';
 import type { NflFullGameFixture } from '@/lib/scores/fixture-provider';
@@ -51,6 +52,11 @@ describe('balldontlie adapter', () => {
     expect(deriveSeasonYear(new Date('2026-01-15T12:00:00.000Z'), 'nfl')).toBe(2025);
   });
 
+  it('derives MLB season year from March start', () => {
+    expect(deriveSeasonYear(new Date('2026-02-15T12:00:00.000Z'), 'mlb')).toBe(2025);
+    expect(deriveSeasonYear(new Date('2026-03-15T12:00:00.000Z'), 'mlb')).toBe(2026);
+  });
+
   it('enumerates inclusive UTC date range', () => {
     const dates = enumerateDateRange(
       new Date('2026-09-25T00:00:00.000Z'),
@@ -65,6 +71,13 @@ describe('balldontlie adapter', () => {
     const query = buildListGamesQuery('nfl', from, to);
     expect(query.seasons).toEqual(['2026']);
     expect(query.dates).toEqual(['2026-09-25', '2026-09-26', '2026-09-27']);
+  });
+
+  it('buildListGamesQuery includes both seasons when window crosses MLB season start', () => {
+    const from = new Date('2026-02-20T00:00:00.000Z');
+    const to = new Date('2026-03-05T00:00:00.000Z');
+    const query = buildListGamesQuery('mlb', from, to);
+    expect(query.seasons).toEqual(['2025', '2026']);
   });
 
   it('listGames requests seasons[] and dates[] query params', async () => {
@@ -116,5 +129,41 @@ describe('balldontlie adapter', () => {
     provider.setStepIndex(idx);
     const [update] = await provider.getLive([fixture.providerGameId]);
     expect(update.period).toBe(3);
+  });
+
+  it('maps MLB game payload with inning scores', () => {
+    const game = mapBalldontlieGame('mlb', {
+      id: 42,
+      date: '2026-09-24T00:08:00.000Z',
+      status: 'STATUS_FINAL',
+      status_state: 'final',
+      home_team: { abbreviation: 'NYY' },
+      away_team: { abbreviation: 'LAD' },
+      home_team_data: {
+        runs: 5,
+        inning_scores: [1, 0, 2, 0, 2],
+      },
+      away_team_data: {
+        runs: 3,
+        inning_scores: [0, 1, 0, 2, 0],
+      },
+      period: 9,
+      display_clock: '0:00',
+    });
+
+    expect(game.league).toBe('mlb');
+    expect(game.homeTeamCode).toBe('mlb:NYY');
+    expect(game.awayTeamCode).toBe('mlb:LAD');
+    expect(game.homeScore).toBe(5);
+    expect(game.awayScore).toBe(3);
+    expect(game.periodScores).toEqual([
+      { period: 1, home: 1, away: 0 },
+      { period: 2, home: 0, away: 1 },
+      { period: 3, home: 2, away: 0 },
+      { period: 4, home: 0, away: 2 },
+      { period: 5, home: 2, away: 0 },
+    ]);
+    expect(game.status).toBe('final');
+    expect(game.period).toBe(9);
   });
 });

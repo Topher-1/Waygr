@@ -21,8 +21,15 @@ describe("parseGamesQuery", () => {
   });
 
   it("rejects invalid league", () => {
-    const result = parseGamesQuery(new URLSearchParams("league=mlb"), now);
+    const result = parseGamesQuery(new URLSearchParams("league=epl"), now);
     expect(result).toEqual({ ok: false, reason: "invalid_league" });
+  });
+
+  it("accepts mlb league", () => {
+    const result = parseGamesQuery(new URLSearchParams("league=mlb"), now);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.params.league).toBe("mlb");
   });
 
   it("clamps range to max 7 days from from", () => {

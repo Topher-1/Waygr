@@ -6,7 +6,8 @@ import { createServiceClient } from "@/lib/supabase/service";
 import nflFixture from "@/fixtures/nfl-full-game.json";
 import type { NflFullGameFixture } from "@/lib/scores/fixture-provider";
 
-const PHASE1_LEAGUES: League[] = ["nfl", "ncaaf", "nba"];
+/** Free BDL PoC leagues synced on create/home schedule refresh. */
+export const PHASE1_LEAGUES: League[] = ["nfl", "nba", "mlb"];
 
 export type GameListItem = {
   id: string;
