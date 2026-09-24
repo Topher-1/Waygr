@@ -11,7 +11,8 @@ import {
   type Market,
   type Pick,
 } from "@/lib/challenges/create";
-import { formatKickoff } from "@/lib/challenges/format";
+import { formatCallFromParts, formatKickoff } from "@/lib/challenges/format";
+import { composeForfeit } from "@/lib/forfeit-compose";
 import {
   FORFEIT_PRESET_CATEGORIES,
   FORFEIT_PRESETS,
@@ -113,7 +114,8 @@ export function CreateSheet({
   const [quarter, setQuarter] = useState<number>(1);
   const [forfeitKind, setForfeitKind] = useState<ForfeitKind>("concession");
   const [forfeitText, setForfeitText] = useState("");
-  const [selectedPresetId, setSelectedPresetId] = useState<string | null>(null);
+  const [selectedPresetIds, setSelectedPresetIds] = useState<string[]>([]);
+  const [stakeDisplay, setStakeDisplay] = useState("");
   const [forfeitMode, setForfeitMode] = useState<ForfeitMode>("presets");
   const [customMoney, setCustomMoney] = useState("");
   const [rematchOf, setRematchOf] = useState<string | null>(null);
@@ -172,7 +174,8 @@ export function CreateSheet({
       setForfeitText(prefill.forfeitText ?? "");
       setRematchOf(prefill.rematchOf ?? null);
       setForfeitMode("presets");
-      setSelectedPresetId(null);
+      setSelectedPresetIds([]);
+      setStakeDisplay("");
       setCustomMoney("");
       setStep(prefill.gameId ? "market" : "game");
       return;
@@ -185,6 +188,8 @@ export function CreateSheet({
       setLine(defaultLine("spread"));
       setForfeitKind(lastForfeit ?? "concession");
       setForfeitMode("presets");
+      setSelectedPresetIds([]);
+      setStakeDisplay("");
       setStep("market");
       return;
     }
@@ -197,7 +202,8 @@ export function CreateSheet({
     setQuarter(1);
     setForfeitKind(lastForfeit ?? "concession");
     setForfeitText("");
-    setSelectedPresetId(null);
+    setSelectedPresetIds([]);
+    setStakeDisplay("");
     setForfeitMode("presets");
     setCustomMoney("");
     setRematchOf(null);
@@ -295,33 +301,70 @@ export function CreateSheet({
     onCreated?.(body.slug);
   }
 
-  function selectPreset(preset: ForfeitPreset) {
-    setSelectedPresetId(preset.id);
-    setForfeitMode("presets");
-    setCustomMoney("");
-    setForfeitKind(preset.kind);
-    setForfeitText(preset.text ?? "");
-    if (preset.kind === "custom" && preset.text) {
-      void handleCreate({ kind: "custom", text: preset.text });
-      return;
-    }
-    void handleCreate({ kind: preset.kind, text: preset.text ?? "" });
+  function togglePreset(preset: ForfeitPreset) {
+    setSelectedPresetIds((current) =>
+      current.includes(preset.id)
+        ? current.filter((id) => id !== preset.id)
+        : [...current, preset.id],
+    );
   }
 
-  function submitCustomForfeit() {
-    if (!customScreenResult.ok) {
-      return;
+  function resolveCustomForfeitText(): string | null {
+    if (forfeitMode === "custom_money") {
+      const amount = customMoney.trim();
+      if (!amount) return null;
+      return amount.startsWith("$") ? amount : `$${amount}`;
     }
-    const text =
-      forfeitMode === "custom_money"
-        ? customMoney.trim().startsWith("$")
-          ? customMoney.trim()
-          : `$${customMoney.trim()}`
-        : forfeitText.trim();
-    setForfeitKind("custom");
-    setForfeitText(text);
-    void handleCreate({ kind: "custom", text });
+    if (forfeitMode === "custom") {
+      const text = forfeitText.trim();
+      return text.length > 0 ? text : null;
+    }
+    return null;
   }
+
+  function submitForfeitSelection() {
+    const customPart = resolveCustomForfeitText();
+    if (forfeitMode === "custom" || forfeitMode === "custom_money") {
+      if (!customScreenResult.ok) return;
+    }
+
+    const composed = composeForfeit({
+      presetIds: selectedPresetIds,
+      customText: customPart,
+    });
+    if (!composed) return;
+
+    if (composed.kind === "custom" && composed.text) {
+      const screened = screenCustomForfeit(composed.text);
+      if (!screened.ok) {
+        setError(copy.screening.rejected);
+        return;
+      }
+    }
+
+    setStakeDisplay(composed.displayStake);
+    void handleCreate({
+      kind: composed.kind,
+      text: composed.text ?? "",
+    });
+  }
+
+  const hasPresetSelection = selectedPresetIds.length > 0;
+  const hasCustomInput =
+    (forfeitMode === "custom" && forfeitText.trim().length > 0) ||
+    (forfeitMode === "custom_money" && customMoney.trim().length > 0);
+  const canSubmitForfeit =
+    hasPresetSelection ||
+    (hasCustomInput && customScreenResult.ok);
+  const previewCall =
+    selectedGame &&
+    formatCallFromParts({
+      market,
+      creatorPick,
+      line: market === "spread" || market === "total" ? line : null,
+      quarter: market === "quarter_winner" ? quarter : null,
+      game: selectedGame,
+    });
 
   async function handleShare() {
     if (!createdSlug) return;
@@ -530,14 +573,13 @@ export function CreateSheet({
                     </h3>
                     <div className="flex flex-wrap gap-2">
                       {presets.map((preset) => {
-                        const selected =
-                          selectedPresetId === preset.id && forfeitMode === "presets";
+                        const selected = selectedPresetIds.includes(preset.id);
                         return (
                           <button
                             key={preset.id}
                             type="button"
                             disabled={submitting}
-                            onClick={() => selectPreset(preset)}
+                            onClick={() => togglePreset(preset)}
                             className={`rounded-full border px-4 py-2 text-sm font-medium transition-colors disabled:opacity-50 ${
                               selected
                                 ? "border-[var(--orange)] bg-[var(--orange)] text-[var(--on-accent)]"
@@ -553,7 +595,6 @@ export function CreateSheet({
                           type="button"
                           onClick={() => {
                             setForfeitMode("custom_money");
-                            setSelectedPresetId(null);
                           }}
                           className={`rounded-full border px-4 py-2 text-sm font-medium transition-colors ${
                             forfeitMode === "custom_money"
@@ -574,7 +615,6 @@ export function CreateSheet({
                   selected={forfeitMode === "custom"}
                   onSelect={() => {
                     setForfeitMode("custom");
-                    setSelectedPresetId(null);
                   }}
                 />
 
@@ -607,11 +647,11 @@ export function CreateSheet({
                   </p>
                 ) : null}
 
-                {forfeitMode === "custom" || forfeitMode === "custom_money" ? (
+                {canSubmitForfeit ? (
                   <Button
                     className="w-full"
-                    disabled={!customScreenResult.ok || submitting}
-                    onClick={() => submitCustomForfeit()}
+                    disabled={submitting}
+                    onClick={() => submitForfeitSelection()}
                   >
                     {copy.create.next}
                   </Button>
@@ -621,14 +661,19 @@ export function CreateSheet({
           )}
 
           {step === "preview" && createdSlug && selectedGame && (
-            <div className="space-y-4 text-center">
+            <div className="space-y-5 text-center">
               <p className="text-lg font-semibold">
                 {selectedGame.awayTeam.abbr} at {selectedGame.homeTeam.abbr}
               </p>
-              <p className="text-[var(--muted)]">
-                {market} · {creatorPick}
-                {market === "spread" || market === "total" ? ` ${line}` : ""}
+              <p className="font-[family-name:var(--font-barlow)] text-3xl font-extrabold">
+                {previewCall}
               </p>
+              <div className="rounded-xl border border-[var(--border)] bg-[var(--raised)] px-4 py-3 text-left">
+                <p className="text-xs font-semibold uppercase tracking-wide text-[var(--muted)]">
+                  {copy.create.pickForfeit}
+                </p>
+                <p className="mt-1 text-lg font-semibold">{stakeDisplay}</p>
+              </div>
               <Button
                 className="w-full"
                 onClick={() => void handleShare()}
