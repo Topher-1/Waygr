@@ -30,6 +30,12 @@ AS $$
   );
 $$;
 
+REVOKE ALL ON FUNCTION public.current_profile_id() FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.current_profile_id() TO authenticated;
+
+REVOKE ALL ON FUNCTION public.is_challenge_participant(uuid) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.is_challenge_participant(uuid) TO authenticated;
+
 -- profiles
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 
@@ -92,7 +98,7 @@ CREATE POLICY "challenges_insert_creator"
   TO authenticated
   WITH CHECK (creator_id = public.current_profile_id());
 
-CREATE POLICY "challenges_update_creator_open"
+CREATE POLICY "challenges_cancel_creator"
   ON challenges FOR UPDATE
   TO authenticated
   USING (
@@ -101,8 +107,52 @@ CREATE POLICY "challenges_update_creator_open"
   )
   WITH CHECK (
     creator_id = public.current_profile_id()
-    AND state IN ('open', 'canceled')
+    AND state = 'canceled'
   );
+
+-- Authenticated creators may only cancel (open → canceled). All other column writes
+-- and post-accept state transitions are service role only.
+CREATE OR REPLACE FUNCTION public.challenges_guard_authenticated_update()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  IF auth.role() = 'authenticated' THEN
+    IF OLD.state <> 'open' OR NEW.state <> 'canceled' THEN
+      RAISE EXCEPTION 'authenticated users may only cancel open challenges';
+    END IF;
+    IF NEW.creator_id <> OLD.creator_id
+      OR NEW.opponent_id IS DISTINCT FROM OLD.opponent_id
+      OR NEW.game_id <> OLD.game_id
+      OR NEW.market <> OLD.market
+      OR NEW.creator_pick <> OLD.creator_pick
+      OR NEW.line IS DISTINCT FROM OLD.line
+      OR NEW.quarter IS DISTINCT FROM OLD.quarter
+      OR NEW.forfeit_kind <> OLD.forfeit_kind
+      OR NEW.forfeit_text IS DISTINCT FROM OLD.forfeit_text
+      OR NEW.outcome IS DISTINCT FROM OLD.outcome
+      OR NEW.rematch_of IS DISTINCT FROM OLD.rematch_of
+      OR NEW.accepted_at IS DISTINCT FROM OLD.accepted_at
+      OR NEW.settled_at IS DISTINCT FROM OLD.settled_at
+      OR NEW.slug <> OLD.slug
+      OR NEW.created_at <> OLD.created_at
+    THEN
+      RAISE EXCEPTION 'authenticated users may only change state to canceled';
+    END IF;
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.challenges_guard_authenticated_update() FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.challenges_guard_authenticated_update() TO authenticated;
+
+CREATE TRIGGER challenges_guard_authenticated_update
+  BEFORE UPDATE ON challenges
+  FOR EACH ROW
+  EXECUTE FUNCTION public.challenges_guard_authenticated_update();
 
 -- Post-accept state transitions (accepted, live, settled, void, expired) are service role only.
 

@@ -1,6 +1,7 @@
 import {
   bigint,
   check,
+  foreignKey,
   index,
   integer,
   jsonb,
@@ -15,6 +16,7 @@ import {
   uuid,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
+import { authUsers } from "@/lib/db/auth";
 
 export const leagueEnum = pgEnum("league", ["nfl", "ncaaf", "nba", "ncaab"]);
 export const gameStatusEnum = pgEnum("game_status", [
@@ -54,19 +56,31 @@ export const forfeitStatusEnum = pgEnum("forfeit_status", [
   "paid",
 ]);
 
-export const profiles = pgTable("profiles", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  authUserId: uuid("auth_user_id").unique(),
-  handle: text("handle").unique().notNull(),
-  displayName: text("display_name").notNull(),
-  avatarUrl: text("avatar_url"),
-  adultConfirmedAt: timestamp("adult_confirmed_at", { withTimezone: true }),
-  referredBy: uuid("referred_by"),
-  jerseyTeam: text("jersey_team"),
-  jerseyUntil: timestamp("jersey_until", { withTimezone: true }),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-  deletedAt: timestamp("deleted_at", { withTimezone: true }),
-});
+export const profiles = pgTable(
+  "profiles",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    authUserId: uuid("auth_user_id")
+      .unique()
+      .references(() => authUsers.id, { onDelete: "set null" }),
+    handle: text("handle").unique().notNull(),
+    displayName: text("display_name").notNull(),
+    avatarUrl: text("avatar_url"),
+    adultConfirmedAt: timestamp("adult_confirmed_at", { withTimezone: true }),
+    referredBy: uuid("referred_by"),
+    jerseyTeam: text("jersey_team"),
+    jerseyUntil: timestamp("jersey_until", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
+  },
+  (table) => [
+    foreignKey({
+      name: "profiles_referred_by_profiles_id_fk",
+      columns: [table.referredBy],
+      foreignColumns: [table.id],
+    }),
+  ],
+);
 
 export const teams = pgTable("teams", {
   code: text("code").primaryKey(),
@@ -129,6 +143,11 @@ export const challenges = pgTable(
   },
   (t) => [
     index("challenges_game_id_state_idx").on(t.gameId, t.state),
+    foreignKey({
+      name: "challenges_rematch_of_challenges_id_fk",
+      columns: [t.rematchOf],
+      foreignColumns: [t.id],
+    }),
     check(
       "challenges_quarter_check",
       sql`${t.quarter} is null or (${t.quarter} between 1 and 4)`,
@@ -159,17 +178,23 @@ export const forfeits = pgTable("forfeits", {
   paidAt: timestamp("paid_at", { withTimezone: true }),
 });
 
-export const messages = pgTable("messages", {
-  id: bigint("id", { mode: "number" }).primaryKey().generatedAlwaysAsIdentity(),
-  challengeId: uuid("challenge_id")
-    .notNull()
-    .references(() => challenges.id, { onDelete: "cascade" }),
-  authorId: uuid("author_id")
-    .notNull()
-    .references(() => profiles.id, { onDelete: "cascade" }),
-  body: text("body").notNull(),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-});
+export const messages = pgTable(
+  "messages",
+  {
+    id: bigint("id", { mode: "number" }).primaryKey().generatedAlwaysAsIdentity(),
+    challengeId: uuid("challenge_id")
+      .notNull()
+      .references(() => challenges.id, { onDelete: "cascade" }),
+    authorId: uuid("author_id")
+      .notNull()
+      .references(() => profiles.id, { onDelete: "cascade" }),
+    body: text("body").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    check("messages_body_check", sql`char_length(${t.body}) <= 280`),
+  ],
+);
 
 export const pushSubscriptions = pgTable("push_subscriptions", {
   id: uuid("id").primaryKey().defaultRandom(),

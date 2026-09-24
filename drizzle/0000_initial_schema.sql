@@ -19,7 +19,9 @@ CREATE TABLE "profiles" (
   "jersey_team" text,
   "jersey_until" timestamptz,
   "created_at" timestamptz DEFAULT now() NOT NULL,
-  "deleted_at" timestamptz
+  "deleted_at" timestamptz,
+  CONSTRAINT "profiles_auth_user_id_users_id_fk" FOREIGN KEY ("auth_user_id") REFERENCES "auth"."users"("id") ON DELETE set null ON UPDATE no action,
+  CONSTRAINT "profiles_referred_by_profiles_id_fk" FOREIGN KEY ("referred_by") REFERENCES "public"."profiles"("id") ON DELETE no action ON UPDATE no action
 );
 
 CREATE TABLE "teams" (
