@@ -4,7 +4,7 @@
 **Locked:** Locked decisions, Non-goals, color rules, voice rules — fixed. Any proposed change → Argos → Chris before acting.
 
 ## Assignments
-- **Designer:** From BRAND-BRIEF + `docs/waygr-brand-preview.png` (direction, not pixel spec). Deliver: wordmark SVG light+dark; app icon 1024 + PWA sizes; templates for link preview 1200×630, result card 1080×1350, story card 1080×1920. **Due before build step 6.**
+- **Designer:** From BRAND-BRIEF + `docs/waygr-brand-preview.png` (direction, not pixel spec). Deliver: wordmark SVG light+dark; app icon 1024 + PWA sizes; templates for link preview 1200×630, result card 1080×1350, story card 1080×1920. **Due before build step 6.** → **CLEAR 2026-09-24** — pack in `docs/brand/` (`DESIGNER-GATE.md`).
 - **Engineer + The Builder:** Phase 1 in Cursor, **one PR per step**, using "Prompt to paste" in BUILD-BRIEF. Put four docs + preview in `docs/`; put `settle.ts` + `settle.test.ts` in `lib/` **unchanged**.
 - **Argos:** Track acceptance criteria; weekly update to Chris (steps merged, criteria passing, blocks). Only escalate: link domain, Apple Developer account, BALLDONTLIE tier.
 
