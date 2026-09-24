@@ -20,7 +20,14 @@ export const copy = {
   live: {
     youUp: "You're up.",
     theyUp: (name: string) => `${name}'s up.`,
+    tied: "Dead even.",
     lagging: "Score's lagging. Retrying.",
+    trashTitle: "Trash talk",
+    trashEmpty: "Say something.",
+    trashDemoEmpty: "Messages show up here in a live challenge.",
+    trashPlaceholder: "Talk trash…",
+    trashSend: "Send",
+    trashSendError: "Could not send. Try again.",
   },
 
   result: {
