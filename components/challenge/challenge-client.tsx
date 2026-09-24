@@ -96,6 +96,31 @@ export function ChallengeClient({
     void acceptChallenge();
   }
 
+  async function handleRematch() {
+    setLoading(true);
+    const res = await fetch(`/api/challenges/${challenge.id}/rematch`, {
+      method: "POST",
+    });
+    const body = (await res.json()) as {
+      ok?: boolean;
+      prefill?: Record<string, unknown>;
+    };
+    setLoading(false);
+    if (res.ok && body.ok && body.prefill) {
+      sessionStorage.setItem(
+        "waygr-create-prefill",
+        JSON.stringify(body.prefill),
+      );
+      router.push("/");
+      return;
+    }
+    setError("No rematch game found. Pick one yourself.");
+  }
+
+  function handleMakeYourOwn() {
+    router.push("/");
+  }
+
   const voidCopy = () => {
     const reason = voidReason(challenge);
     if (reason === "expired") {
@@ -145,7 +170,9 @@ export function ChallengeClient({
                 challenge.opponent?.displayName ?? "Someone",
               )}
             </p>
-            <Button className="mx-auto">{copy.challenge.makeYourOwn}</Button>
+            <Button className="mx-auto" onClick={handleMakeYourOwn}>
+              {copy.challenge.makeYourOwn}
+            </Button>
           </section>
         )}
 
@@ -176,8 +203,18 @@ export function ChallengeClient({
                   : copy.result.loss}
             </p>
             <div className="flex flex-col gap-3">
-              <Button>{copy.result.rematch}</Button>
-              <Button variant="secondary">Share</Button>
+              <Button onClick={() => void handleRematch()} disabled={loading}>
+                {copy.result.rematch}
+              </Button>
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  const url = `${window.location.origin}/c/${challenge.slug}`;
+                  void navigator.clipboard?.writeText(url);
+                }}
+              >
+                Share
+              </Button>
             </div>
           </section>
         )}
@@ -187,7 +224,9 @@ export function ChallengeClient({
             <p className="font-[family-name:var(--font-barlow)] text-3xl font-extrabold">
               {voidCopy()}
             </p>
-            <Button className="mx-auto">{copy.challenge.makeYourOwn}</Button>
+            <Button className="mx-auto" onClick={handleMakeYourOwn}>
+              {copy.challenge.makeYourOwn}
+            </Button>
           </section>
         )}
       </ChallengeShell>

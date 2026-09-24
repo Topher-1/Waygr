@@ -48,6 +48,36 @@ export const copy = {
   home: {
     empty: (game: string) => `No calls yet. ${game}. Make one.`,
     makeCall: "Make a call",
+    live: "Live now",
+    owed: "You owe",
+    waiting: "Waiting on someone",
+    tonight: "Tonight",
+    quickCall: "One-tap call",
+  },
+
+  create: {
+    pickGame: "Pick a game",
+    pickMarket: "What's the call?",
+    pickSide: "Your side",
+    pickLine: "Set the line",
+    pickForfeit: "What's on the line?",
+    preview: "Your call",
+    next: "Next",
+    share: "Share challenge",
+    markets: {
+      spread: "Spread",
+      winner: "Winner",
+      total: "Total",
+      half_leader: "Halftime lead",
+      quarter_winner: "Quarter winner",
+    },
+    forfeits: {
+      concession: "Concession card",
+      jersey_swap: "Jersey swap",
+      custom: "Custom",
+    },
+    customPlaceholder: "Loser posts a public apology…",
+    cancelChallenge: "Cancel challenge",
   },
 
   auth: {
