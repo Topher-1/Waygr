@@ -1,0 +1,8 @@
+[functions.poll-scores]
+verify_jwt = false
+
+[functions.settle]
+verify_jwt = false
+
+[functions.sweep]
+verify_jwt = false

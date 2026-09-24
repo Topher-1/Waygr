@@ -1,0 +1,76 @@
+{
+  "description": "KC (home) 27, BUF (away) 20 — full NFL game replay for poll-scores + settle",
+  "providerGameId": "999001",
+  "league": "nfl",
+  "homeTeam": "nfl:KC",
+  "awayTeam": "nfl:BUF",
+  "startsAt": "2026-09-20T20:25:00.000Z",
+  "timeline": [
+    {
+      "label": "kickoff",
+      "status": "in_progress",
+      "statusText": "1st Qtr",
+      "period": 1,
+      "homeScore": 0,
+      "awayScore": 0,
+      "periodScores": []
+    },
+    {
+      "label": "end_q1",
+      "status": "in_progress",
+      "statusText": "End of 1st",
+      "period": 2,
+      "homeScore": 7,
+      "awayScore": 3,
+      "periodScores": [{ "period": 1, "home": 7, "away": 3 }]
+    },
+    {
+      "label": "halftime",
+      "status": "in_progress",
+      "statusText": "Halftime",
+      "period": 3,
+      "homeScore": 17,
+      "awayScore": 10,
+      "periodScores": [
+        { "period": 1, "home": 7, "away": 3 },
+        { "period": 2, "home": 10, "away": 7 }
+      ]
+    },
+    {
+      "label": "end_q3",
+      "status": "in_progress",
+      "statusText": "End of 3rd",
+      "period": 4,
+      "homeScore": 20,
+      "awayScore": 17,
+      "periodScores": [
+        { "period": 1, "home": 7, "away": 3 },
+        { "period": 2, "home": 10, "away": 7 },
+        { "period": 3, "home": 3, "away": 7 }
+      ]
+    },
+    {
+      "label": "final",
+      "status": "final",
+      "statusText": "Final",
+      "period": 4,
+      "homeScore": 27,
+      "awayScore": 20,
+      "periodScores": [
+        { "period": 1, "home": 7, "away": 3 },
+        { "period": 2, "home": 10, "away": 7 },
+        { "period": 3, "home": 3, "away": 7 },
+        { "period": 4, "home": 7, "away": 3 }
+      ]
+    }
+  ],
+  "challenges": [
+    { "key": "winner_home", "market": "winner", "creatorPick": "home", "line": null, "quarter": null, "expectedOutcome": "creator", "settleAt": "final" },
+    { "key": "spread_home", "market": "spread", "creatorPick": "home", "line": -3.5, "quarter": null, "expectedOutcome": "creator", "settleAt": "final" },
+    { "key": "total_over", "market": "total", "creatorPick": "over", "line": 46.5, "quarter": null, "expectedOutcome": "creator", "settleAt": "final" },
+    { "key": "half_home", "market": "half_leader", "creatorPick": "home", "line": null, "quarter": null, "expectedOutcome": "creator", "settleAt": "halftime" },
+    { "key": "q1_home", "market": "quarter_winner", "creatorPick": "home", "line": null, "quarter": 1, "expectedOutcome": "creator", "settleAt": "end_q1" },
+    { "key": "q2_home", "market": "quarter_winner", "creatorPick": "home", "line": null, "quarter": 2, "expectedOutcome": "creator", "settleAt": "halftime" },
+    { "key": "q3_away", "market": "quarter_winner", "creatorPick": "away", "line": null, "quarter": 3, "expectedOutcome": "creator", "settleAt": "end_q3" }
+  ]
+}

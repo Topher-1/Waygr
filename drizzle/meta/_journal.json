@@ -15,6 +15,13 @@
       "when": 1727203300000,
       "tag": "0001_rls_policies",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1727203400000,
+      "tag": "0002_job_meta_and_proof_submitted",
+      "breakpoints": true
     }
   ]
 }
