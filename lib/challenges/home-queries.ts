@@ -92,6 +92,10 @@ async function hydrateChallenge(row: Record<string, unknown>): Promise<Challenge
       clock: game.clock as string | null,
       homeScore: game.home_score as number,
       awayScore: game.away_score as number,
+      periodScores:
+        (game.period_scores as ChallengeLanding["game"]["periodScores"]) ?? [],
+      updatedAt:
+        (game.updated_at as string | undefined) ?? new Date(0).toISOString(),
       homeTeam: {
         code: home.code,
         abbr: home.abbr,

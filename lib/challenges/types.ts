@@ -20,6 +20,12 @@ export type ChallengeLandingTeam = {
   secondaryColor: string;
 };
 
+export type PeriodScore = {
+  period: number;
+  home: number;
+  away: number;
+};
+
 export type ChallengeLandingGame = {
   id: string;
   league: string;
@@ -29,8 +35,17 @@ export type ChallengeLandingGame = {
   clock: string | null;
   homeScore: number;
   awayScore: number;
+  periodScores: PeriodScore[];
+  updatedAt: string;
   homeTeam: ChallengeLandingTeam;
   awayTeam: ChallengeLandingTeam;
+};
+
+export type TrashTalkMessage = {
+  id: number;
+  body: string;
+  authorId: string;
+  createdAt: string;
 };
 
 export type ChallengeLanding = {

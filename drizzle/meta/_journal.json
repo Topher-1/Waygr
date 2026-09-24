@@ -50,6 +50,13 @@
       "when": 1727203800000,
       "tag": "0006_add_mlb_league",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1727203900000,
+      "tag": "0007_realtime_publication",
+      "breakpoints": true
     }
   ]
 }

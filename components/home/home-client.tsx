@@ -91,7 +91,7 @@ export function HomeClient({ viewer, feed }: HomeClientProps) {
                         href={`/c/${challenge.slug}`}
                         className="block rounded-xl border border-[var(--border)] bg-[var(--raised)] p-4"
                       >
-                        <ScoreStrip challenge={challenge} />
+                        <ScoreStrip game={challenge.game} />
                         <p className="mt-2 text-sm font-semibold">
                           {formatMatchup(challenge)} · {formatCall(challenge)}
                         </p>

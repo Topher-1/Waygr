@@ -5,6 +5,7 @@ import {
   demoViewOrder,
 } from "@/lib/challenges/demo-fixture";
 import type { ChallengeView } from "@/lib/challenges/types";
+import type { ViewerProfile } from "@/lib/auth/profile";
 import { copy } from "@/lib/copy";
 
 type PageProps = {
@@ -26,6 +27,17 @@ export default async function DemoPage({ searchParams }: PageProps) {
     : "open";
 
   const challenge = demoChallenges[view];
+
+  const demoViewer: ViewerProfile | null =
+    view === "live" && challenge.opponent
+      ? {
+          id: challenge.opponent.id,
+          handle: challenge.opponent.handle,
+          displayName: challenge.opponent.displayName,
+          avatarUrl: challenge.opponent.avatarUrl,
+          adultConfirmedAt: new Date().toISOString(),
+        }
+      : null;
 
   return (
     <div className="min-h-screen bg-[var(--bg)]">
@@ -53,7 +65,7 @@ export default async function DemoPage({ searchParams }: PageProps) {
       <ChallengeClient
         challenge={challenge}
         view={view}
-        viewer={null}
+        viewer={demoViewer}
         demoMode
       />
     </div>

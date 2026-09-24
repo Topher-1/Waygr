@@ -7,6 +7,7 @@ import type { ChallengeLanding, ChallengeView } from "@/lib/challenges/types";
 import type { ViewerProfile } from "@/lib/auth/profile";
 import { ChallengeShell } from "@/components/challenge/challenge-shell";
 import { ChallengeHero } from "@/components/challenge/challenge-hero";
+import { LiveView } from "@/components/challenge/live-view";
 import { ScoreStrip } from "@/components/challenge/score-strip";
 import { SignInSheet } from "@/components/auth/sign-in-sheet";
 import { Button } from "@/components/ui/button";
@@ -159,7 +160,7 @@ export function ChallengeClient({
             <p className="font-[family-name:var(--font-barlow)] text-4xl font-extrabold text-[var(--green)]">
               {copy.challenge.accepted}
             </p>
-            <ScoreStrip challenge={challenge} />
+            <ScoreStrip game={challenge.game} />
           </section>
         )}
 
@@ -177,20 +178,16 @@ export function ChallengeClient({
         )}
 
         {view === "live" && (
-          <section className="space-y-6">
-            <ScoreStrip challenge={challenge} />
-            <ChallengeHero challenge={challenge} />
-            <p className="text-center text-[var(--muted)]">
-              {challenge.game.status === "live"
-                ? copy.live.youUp
-                : copy.challenge.accepted}
-            </p>
-          </section>
+          <LiveView
+            challenge={challenge}
+            viewer={viewer}
+            demoMode={demoMode}
+          />
         )}
 
         {view === "settled" && (
           <section className="space-y-6 text-center">
-            <ScoreStrip challenge={challenge} />
+            <ScoreStrip game={challenge.game} />
             <p className="font-[family-name:var(--font-barlow)] text-4xl font-extrabold">
               {challenge.outcome === "push"
                 ? copy.result.push

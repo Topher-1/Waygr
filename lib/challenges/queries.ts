@@ -72,6 +72,8 @@ export async function getChallengeBySlug(
         clock,
         home_score,
         away_score,
+        period_scores,
+        updated_at,
         home_team,
         away_team
       )
@@ -93,6 +95,8 @@ export async function getChallengeBySlug(
     clock: string | null;
     home_score: number;
     away_score: number;
+    period_scores: { period: number; home: number; away: number }[] | null;
+    updated_at: string;
     home_team: string;
     away_team: string;
   };
@@ -151,6 +155,8 @@ export async function getChallengeBySlug(
       clock: game.clock,
       homeScore: game.home_score,
       awayScore: game.away_score,
+      periodScores: game.period_scores ?? [],
+      updatedAt: game.updated_at,
       homeTeam,
       awayTeam,
     },

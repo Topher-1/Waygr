@@ -50,6 +50,8 @@ const base: ChallengeLanding = {
     clock: null,
     homeScore: 0,
     awayScore: 0,
+    periodScores: [],
+    updatedAt: new Date().toISOString(),
     homeTeam: teams.home,
     awayTeam: teams.away,
   },
@@ -86,6 +88,11 @@ export const demoChallenges: Record<ChallengeView, ChallengeLanding> = {
       clock: "5:42",
       homeScore: 14,
       awayScore: 10,
+      periodScores: [
+        { period: 1, home: 7, away: 3 },
+        { period: 2, home: 7, away: 7 },
+      ],
+      updatedAt: new Date().toISOString(),
     },
   },
   settled: {
