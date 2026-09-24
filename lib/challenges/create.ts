@@ -27,6 +27,7 @@ export type CreateRejectReason =
   | "line_required"
   | "quarter_required"
   | "forfeit_text_required"
+  | "invalid_forfeit_kind"
   | "forfeit_screened"
   | "game_not_found";
 
@@ -84,7 +85,7 @@ export function validateCreate(
     return { ok: false, reason: "invalid_pick" };
   }
   if (!isForfeitKind(forfeitKind)) {
-    return { ok: false, reason: "forfeit_text_required" };
+    return { ok: false, reason: "invalid_forfeit_kind" };
   }
 
   const line =
@@ -115,7 +116,12 @@ export function validateCreate(
     }
   }
 
-  if (market === "winner" || market === "half_leader") {
+  if (
+    market === "winner" ||
+    market === "half_leader" ||
+    market === "spread" ||
+    market === "quarter_winner"
+  ) {
     if (creatorPick !== "home" && creatorPick !== "away") {
       return { ok: false, reason: "invalid_pick" };
     }

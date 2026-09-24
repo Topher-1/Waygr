@@ -140,11 +140,10 @@ export async function getHomeFeed(viewer: ViewerProfile): Promise<HomeFeed> {
   for (const row of participantRows ?? []) {
     const challenge = await hydrateChallenge(row as Record<string, unknown>);
     if (!challenge) continue;
-    if (challenge.state === "live" || challenge.state === "accepted") {
-      if (challenge.game.status === "live" || challenge.state === "live") {
-        live.push({ ...challenge, view: "live" });
-      }
-    } else if (challenge.state === "open" && challenge.creator.id === viewer.id) {
+    const bucket = bucketHomeChallenge(challenge, viewer.id);
+    if (bucket === "live") {
+      live.push({ ...challenge, view: "live" });
+    } else if (bucket === "openWaiting") {
       openWaiting.push({ ...challenge, view: "open" });
     }
   }
@@ -187,11 +186,17 @@ export async function getHomeFeed(viewer: ViewerProfile): Promise<HomeFeed> {
     });
   }
 
-  const games = await listGamesForCreate({
-    league: null,
-    from: now,
-    to: tonightEnd.getTime() > now.getTime() ? tonightEnd : new Date(now.getTime() + 24 * 3600_000),
-  });
+  const games = await listGamesForCreate(
+    {
+      league: null,
+      from: now,
+      to:
+        tonightEnd.getTime() > now.getTime()
+          ? tonightEnd
+          : new Date(now.getTime() + 24 * 3600_000),
+    },
+    { sync: true },
+  );
 
   const tonightQuickCalls: TonightQuickCall[] = games.slice(0, 6).map((game) => ({
     gameId: game.id,
@@ -212,4 +217,18 @@ export async function getHomeFeed(viewer: ViewerProfile): Promise<HomeFeed> {
 
 export function formatHomeForfeitLine(item: HomeOwedForfeit): string {
   return `${item.call} · owe ${item.owedToName}`;
+}
+
+/** Bucket a challenge for Home ordering (unit-tested). */
+export function bucketHomeChallenge(
+  challenge: { state: string; creator: { id: string } },
+  viewerId: string,
+): "live" | "openWaiting" | null {
+  if (challenge.state === "live" || challenge.state === "accepted") {
+    return "live";
+  }
+  if (challenge.state === "open" && challenge.creator.id === viewerId) {
+    return "openWaiting";
+  }
+  return null;
 }

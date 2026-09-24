@@ -44,4 +44,24 @@ describe("validateCreate", () => {
     });
     expect(result).toEqual({ ok: false, reason: "adult_required" });
   });
+
+  it("rejects spread pick that is not home or away", () => {
+    const now = new Date("2026-09-20T20:00:00Z");
+    const kickoff = new Date(now.getTime() + 3600_000);
+    const result = validateCreate(
+      { ...baseBody, creatorPick: "over" },
+      { kickoffAt: kickoff, now, adultConfirmedAt: adult },
+    );
+    expect(result).toEqual({ ok: false, reason: "invalid_pick" });
+  });
+
+  it("rejects invalid forfeit kind", () => {
+    const now = new Date("2026-09-20T20:00:00Z");
+    const kickoff = new Date(now.getTime() + 3600_000);
+    const result = validateCreate(
+      { ...baseBody, forfeitKind: "money" },
+      { kickoffAt: kickoff, now, adultConfirmedAt: adult },
+    );
+    expect(result).toEqual({ ok: false, reason: "invalid_forfeit_kind" });
+  });
 });

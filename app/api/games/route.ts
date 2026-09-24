@@ -1,8 +1,18 @@
 import { NextResponse } from "next/server";
 import { parseGamesQuery } from "@/lib/games/query-bounds";
 import { listGamesForCreate } from "@/lib/games/sync";
+import { createClient } from "@/lib/supabase/server";
 
 export async function GET(request: Request) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return NextResponse.json({ ok: false, reason: "unauthorized" }, { status: 401 });
+  }
+
   const { searchParams } = new URL(request.url);
   const parsed = parseGamesQuery(searchParams, new Date());
 
@@ -14,7 +24,7 @@ export async function GET(request: Request) {
   }
 
   try {
-    const games = await listGamesForCreate(parsed.params);
+    const games = await listGamesForCreate(parsed.params, { sync: true });
     return NextResponse.json({ ok: true, games });
   } catch {
     return NextResponse.json(

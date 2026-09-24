@@ -103,13 +103,11 @@ function createProviderForSchedule() {
   return new FixtureProvider(shifted);
 }
 
-/** Sync schedule from ScoreProvider and return games in range. */
-export async function listGamesForCreate(
+async function syncScheduleFromProvider(
   params: { league: League | null; from: Date; to: Date },
-): Promise<GameListItem[]> {
+): Promise<void> {
   const provider = createProviderForSchedule();
   const leagues = params.league ? [params.league] : PHASE1_LEAGUES;
-  const upsertedIds: string[] = [];
 
   for (const league of leagues) {
     let games: GameUpsert[];
@@ -128,17 +126,19 @@ export async function listGamesForCreate(
     }
 
     for (const game of games) {
-      const id = await upsertGameRow(provider.name, game);
-      upsertedIds.push(id);
+      await upsertGameRow(provider.name, game);
     }
   }
+}
 
+/** Read stored games in range — no ScoreProvider sync or writes. */
+export async function listStoredGames(
+  params: { league: League | null; from: Date; to: Date },
+): Promise<GameListItem[]> {
   const service = createServiceClient();
   let query = service
     .from("games")
-    .select(
-      "id, league, starts_at, status, home_team, away_team",
-    )
+    .select("id, league, starts_at, status, home_team, away_team")
     .gte("starts_at", params.from.toISOString())
     .lte("starts_at", params.to.toISOString())
     .in("status", ["scheduled", "live"])
@@ -150,13 +150,6 @@ export async function listGamesForCreate(
 
   const { data, error } = await query;
   if (error) throw error;
-
-  const teamCodes = new Set<string>();
-  for (const row of data ?? []) {
-    teamCodes.add(row.home_team as string);
-    teamCodes.add(row.away_team as string);
-  }
-  await ensureTeams([...teamCodes]);
 
   return (data ?? []).map((row) => {
     const home = resolveTeamInfo(row.home_team as string);
@@ -182,6 +175,17 @@ export async function listGamesForCreate(
       },
     };
   });
+}
+
+/** Sync schedule from ScoreProvider (when allowed) and return games in range. */
+export async function listGamesForCreate(
+  params: { league: League | null; from: Date; to: Date },
+  options: { sync: boolean } = { sync: false },
+): Promise<GameListItem[]> {
+  if (options.sync) {
+    await syncScheduleFromProvider(params);
+  }
+  return listStoredGames(params);
 }
 
 /** List scheduled games for rematch candidate search. */
