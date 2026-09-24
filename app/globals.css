@@ -1,0 +1,25 @@
+@import "tailwindcss";
+@import "../styles/tokens.css";
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-raised: var(--raised);
+  --color-border: var(--border);
+  --color-text: var(--text);
+  --color-muted: var(--muted);
+  --color-orange: var(--orange);
+  --color-orange-strong: var(--orange-strong);
+  --color-blue: var(--blue);
+  --color-green: var(--green);
+  --color-rose: var(--rose);
+  --color-on-accent: var(--on-accent);
+  --font-sans: var(--font-inter);
+  --font-display: var(--font-barlow);
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-inter), system-ui, sans-serif;
+}
