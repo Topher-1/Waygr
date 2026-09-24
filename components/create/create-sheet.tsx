@@ -17,6 +17,7 @@ import {
   FORFEIT_PRESETS,
   type ForfeitPreset,
 } from "@/lib/forfeit-presets";
+import { CustomForfeitChip } from "@/components/create/custom-forfeit-chip";
 import { screenCustomForfeit } from "@/lib/forfeit-screen";
 
 type GameItem = {
@@ -569,20 +570,13 @@ export function CreateSheet({
               })}
 
               <div className="border-t border-[var(--border)] pt-4">
-                <button
-                  type="button"
-                  onClick={() => {
+                <CustomForfeitChip
+                  selected={forfeitMode === "custom"}
+                  onSelect={() => {
                     setForfeitMode("custom");
                     setSelectedPresetId(null);
                   }}
-                  className={`mb-3 text-sm font-semibold ${
-                    forfeitMode === "custom"
-                      ? "text-[var(--orange-strong)]"
-                      : "text-[var(--muted)]"
-                  }`}
-                >
-                  {copy.create.forfeits.custom}
-                </button>
+                />
 
                 {forfeitMode === "custom" ? (
                   <textarea
