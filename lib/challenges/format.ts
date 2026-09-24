@@ -1,47 +1,61 @@
 import type { ChallengeLanding } from "@/lib/challenges/types";
 
-function teamName(
-  challenge: ChallengeLanding,
-  side: "home" | "away",
-): string {
-  return side === "home"
-    ? challenge.game.homeTeam.name
-    : challenge.game.awayTeam.name;
+export type CallFormatInput = {
+  market: string;
+  creatorPick: string;
+  line: number | string | null;
+  quarter: number | null;
+  game: {
+    homeTeam: { abbr: string; name: string };
+    awayTeam: { abbr: string; name: string };
+  };
+};
+
+function teamAbbr(input: CallFormatInput, side: "home" | "away"): string {
+  return side === "home" ? input.game.homeTeam.abbr : input.game.awayTeam.abbr;
 }
 
-function teamAbbr(
-  challenge: ChallengeLanding,
-  side: "home" | "away",
-): string {
-  return side === "home"
-    ? challenge.game.homeTeam.abbr
-    : challenge.game.awayTeam.abbr;
+function parseLine(line: number | string | null): number | null {
+  if (line === null || line === undefined) return null;
+  const value = typeof line === "number" ? line : parseFloat(line);
+  return Number.isFinite(value) ? value : null;
 }
 
-/** Human-readable call line for previews and OG. */
-export function formatCall(challenge: ChallengeLanding): string {
-  const pick = challenge.creatorPick;
-  const line = challenge.line ? parseFloat(challenge.line) : null;
+/** Human-readable call line using team abbrs (create preview, OG, challenge pages). */
+export function formatCallFromParts(input: CallFormatInput): string {
+  const pick = input.creatorPick;
+  const line = parseLine(input.line);
 
-  switch (challenge.market) {
+  switch (input.market) {
     case "winner":
-      return `${teamName(challenge, pick as "home" | "away")} to win`;
+      return `${teamAbbr(input, pick as "home" | "away")} wins`;
     case "spread": {
-      const abbr = teamAbbr(challenge, pick as "home" | "away");
+      const abbr = teamAbbr(input, pick as "home" | "away");
       const sign = line !== null && line > 0 ? "+" : "";
       return `${abbr} ${sign}${line}`;
     }
     case "total":
       return `${pick === "over" ? "Over" : "Under"} ${line}`;
     case "half_leader":
-      return `${teamName(challenge, pick as "home" | "away")} lead at half`;
+      return `${teamAbbr(input, pick as "home" | "away")} leads at half`;
     case "quarter_winner": {
-      const abbr = teamAbbr(challenge, pick as "home" | "away");
-      return `${abbr} win Q${challenge.quarter ?? "?"}`;
+      const abbr = teamAbbr(input, pick as "home" | "away");
+      return `${abbr} wins Q${input.quarter ?? "?"}`;
     }
     default:
       return "a call";
   }
+}
+
+/** Human-readable call line for previews and OG. */
+export function formatCall(challenge: ChallengeLanding): string {
+  return formatCallFromParts({
+    market: challenge.market,
+    creatorPick: challenge.creatorPick,
+    line: challenge.line,
+    quarter: challenge.quarter,
+    game: challenge.game,
+  });
 }
 
 /** Forfeit line for previews. */
@@ -57,6 +71,20 @@ export function formatForfeit(challenge: ChallengeLanding): string {
         : "owes a custom forfeit";
     default:
       return "owes a forfeit";
+  }
+}
+
+/** Stake line for confirm UI — omits the "owes" prefix. */
+export function formatStakeDisplay(challenge: ChallengeLanding): string {
+  switch (challenge.forfeitKind) {
+    case "concession":
+      return "Concession card";
+    case "jersey_swap":
+      return "Jersey swap";
+    case "custom":
+      return challenge.forfeitText ?? "Custom forfeit";
+    default:
+      return "Forfeit";
   }
 }
 

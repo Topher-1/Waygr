@@ -88,6 +88,12 @@ describe("validateCreate", () => {
         ctx,
       ).ok,
     ).toBe(true);
+    expect(
+      validateCreate(
+        { ...baseBody, forfeitKind: "custom", forfeitText: "a beer + $10" },
+        ctx,
+      ).ok,
+    ).toBe(true);
   });
 
   it("rejects payment-rail custom forfeit text", () => {
