@@ -3,6 +3,15 @@ import type { GameUpdate, GameUpsert, League, PeriodScore, ScoreProvider } from 
 
 const PROVIDER = 'balldontlie';
 const BASE_URL = 'https://api.balldontlie.io';
+const MAX_LIST_GAMES_DAYS = 14;
+
+/** Football seasons start in September; basketball in October (NBA) or November (NCAAB). */
+const SEASON_START_MONTH: Record<League, number> = {
+  nfl: 8,
+  ncaaf: 8,
+  nba: 9,
+  ncaab: 10,
+};
 
 const LEAGUE_PATH: Record<League, string> = {
   nfl: 'nfl',
@@ -153,6 +162,43 @@ function mapGame(league: League, game: BdlGame): GameUpsert {
   };
 }
 
+/** BDL season year for a calendar date (e.g. Jan 2026 NFL → 2025; Sep 2026 NFL → 2026). */
+export function deriveSeasonYear(date: Date, league: League): number {
+  const month = date.getUTCMonth();
+  const year = date.getUTCFullYear();
+  return month >= SEASON_START_MONTH[league] ? year : year - 1;
+}
+
+function formatDateUTC(date: Date): string {
+  return date.toISOString().slice(0, 10);
+}
+
+/** Inclusive UTC calendar days from `from` through `to`, capped for rate limits. */
+export function enumerateDateRange(from: Date, to: Date, maxDays = MAX_LIST_GAMES_DAYS): string[] {
+  const dates: string[] = [];
+  const cursor = new Date(from);
+  cursor.setUTCHours(0, 0, 0, 0);
+  const end = new Date(to);
+  end.setUTCHours(0, 0, 0, 0);
+
+  while (cursor <= end && dates.length < maxDays) {
+    dates.push(formatDateUTC(cursor));
+    cursor.setUTCDate(cursor.getUTCDate() + 1);
+  }
+  return dates;
+}
+
+export function buildListGamesQuery(
+  league: League,
+  from: Date,
+  to: Date,
+): { seasons: string[]; dates: string[] } {
+  return {
+    seasons: [String(deriveSeasonYear(from, league))],
+    dates: enumerateDateRange(from, to),
+  };
+}
+
 function mapUpdate(game: BdlGame): GameUpdate {
   const { home, away } = quarterFields(game);
   const periodScores = buildPeriodScores(home, away);
@@ -178,14 +224,24 @@ export class BallDontLieProvider implements ScoreProvider {
     private readonly fetchImpl: typeof fetch = fetch,
   ) {}
 
-  private async request<T>(league: League, path: string, params: Record<string, string>): Promise<T> {
+  private async request<T>(
+    league: League,
+    path: string,
+    params: Record<string, string | string[]>,
+  ): Promise<T> {
     if (!this.apiKey) {
       throw new Error('BALLDONTLIE_API_KEY is not configured');
     }
 
     const url = new URL(`${BASE_URL}/${LEAGUE_PATH[league]}/v1${path}`);
     for (const [key, value] of Object.entries(params)) {
-      url.searchParams.set(key, value);
+      if (Array.isArray(value)) {
+        for (const entry of value) {
+          url.searchParams.append(key, entry);
+        }
+      } else {
+        url.searchParams.set(key, value);
+      }
     }
 
     const response = await this.fetchImpl(url.toString(), {
@@ -200,12 +256,35 @@ export class BallDontLieProvider implements ScoreProvider {
   }
 
   async listGames(league: League, from: Date, to: Date): Promise<GameUpsert[]> {
-    const data = await this.request<{ data: BdlGame[] }>(league, '/games', {
-      start_date: from.toISOString().slice(0, 10),
-      end_date: to.toISOString().slice(0, 10),
-      per_page: '100',
-    });
-    return data.data.map((game) => mapGame(league, game));
+    const { seasons, dates } = buildListGamesQuery(league, from, to);
+    if (dates.length === 0) return [];
+
+    const byId = new Map<number, BdlGame>();
+    let cursor: string | undefined;
+
+    do {
+      const params: Record<string, string | string[]> = {
+        'seasons[]': seasons,
+        'dates[]': dates,
+        per_page: '100',
+      };
+      if (cursor) params.cursor = cursor;
+
+      const data = await this.request<{ data: BdlGame[]; meta?: { next_cursor?: number | null } }>(
+        league,
+        '/games',
+        params,
+      );
+
+      for (const game of data.data) {
+        byId.set(game.id, game);
+      }
+
+      const next = data.meta?.next_cursor;
+      cursor = next != null && next !== 0 ? String(next) : undefined;
+    } while (cursor);
+
+    return [...byId.values()].map((game) => mapGame(league, game));
   }
 
   async getLive(providerGameIds: string[]): Promise<GameUpdate[]> {
