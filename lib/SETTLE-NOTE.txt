@@ -1,0 +1,1 @@
+SOURCE OF TRUTH for settle.test.ts is settle.test.ts.pdf (24 cases). The .ts below is a best-effort reconstruct — prefer PDF.

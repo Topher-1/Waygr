@@ -7,7 +7,10 @@ Call your shot against a friend on a live game. The score feed settles it. The l
 Status: scaffolding (step 1 of 8).
 
 ## Docs
-- PRODUCT-BRIEF · GROWTH-LOOP · BRAND-BRIEF · BUILD-BRIEF (landing with first PR)
+- `docs/BUILD-BRIEF.md` (SoT) · PRODUCT · GROWTH · BRAND
+- `docs/patterns-brief.md` · `docs/architecture.md` · `docs/prd.md`
+- `lib/settle.ts` (+ `settle.test.ts` from PDF in Step 2)
+- `HANDOFF.md`
 
 ## Non-goals (Phase 1)
 No money, payment links, stranger matching, groups/rooms, native app, or contact spam.
