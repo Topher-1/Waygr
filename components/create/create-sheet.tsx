@@ -72,6 +72,31 @@ function groupGamesByDay(games: GameItem[]): Map<string, GameItem[]> {
   return groups;
 }
 
+function GameSlateSkeleton() {
+  return (
+    <div className="space-y-6" aria-busy="true" aria-label="Loading games">
+      <section>
+        <div className="mb-2 h-4 w-36 animate-pulse rounded bg-[var(--raised)]" />
+        <ul className="space-y-2">
+          {[0, 1, 2, 3].map((i) => (
+            <li
+              key={i}
+              className="flex items-center gap-3 rounded-xl border border-[var(--border)] bg-[var(--raised)] p-3"
+            >
+              <span className="h-8 w-1 animate-pulse rounded-full bg-[var(--border)]" />
+              <span className="h-8 w-1 animate-pulse rounded-full bg-[var(--border)]" />
+              <div className="flex-1 space-y-2">
+                <div className="h-4 w-24 animate-pulse rounded bg-[var(--border)]" />
+                <div className="h-3 w-36 animate-pulse rounded bg-[var(--border)]" />
+              </div>
+            </li>
+          ))}
+        </ul>
+      </section>
+    </div>
+  );
+}
+
 function sideOptions(
   market: Market,
   game: GameItem | null,
@@ -430,7 +455,7 @@ export function CreateSheet({
           {step === "game" && (
             <div className="space-y-6">
               {loadingGames ? (
-                <p className="text-[var(--muted)]">Loading games…</p>
+                <GameSlateSkeleton />
               ) : games.length === 0 ? (
                 <p className="text-[var(--muted)]">No games in the next 7 days.</p>
               ) : (

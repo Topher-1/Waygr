@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { mapAuthError } from "@/lib/auth/errors";
 import { copy } from "@/lib/copy";
 import { Button } from "@/components/ui/button";
 
@@ -55,7 +56,22 @@ export function SignInSheet({
     return !body.profile?.adultConfirmedAt;
   }
 
+  async function persistAdultConfirmation(): Promise<boolean> {
+    const res = await fetch("/api/auth/confirm-adult", { method: "POST" });
+    if (!res.ok) {
+      const body = (await res.json()) as { error?: string };
+      setError(body.error ?? "Could not confirm age.");
+      return false;
+    }
+    return true;
+  }
+
   async function handleCredentials() {
+    if (authMode === "sign-up" && !adultChecked) {
+      setError(copy.auth.adultConfirmError);
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
@@ -67,7 +83,13 @@ export function SignInSheet({
     setLoading(false);
 
     if (result.error) {
-      setError(result.error.message);
+      const mapped = mapAuthError(result.error.message);
+      if (mapped.suggestSignIn) {
+        setError(copy.auth.alreadyRegistered);
+        setAuthMode("sign-in");
+        return;
+      }
+      setError(mapped.text);
       return;
     }
 
@@ -79,6 +101,17 @@ export function SignInSheet({
 
     const needsAdult = await setupProfile();
     if (needsAdult) {
+      if (authMode === "sign-up" && adultChecked) {
+        setLoading(true);
+        const confirmed = await persistAdultConfirmation();
+        setLoading(false);
+        if (!confirmed) {
+          return;
+        }
+        onComplete();
+        onClose();
+        return;
+      }
       setStep("adult");
       return;
     }
@@ -94,16 +127,38 @@ export function SignInSheet({
     }
     setLoading(true);
     setError(null);
-    const res = await fetch("/api/auth/confirm-adult", { method: "POST" });
+    const confirmed = await persistAdultConfirmation();
     setLoading(false);
-    if (!res.ok) {
-      const body = (await res.json()) as { error?: string };
-      setError(body.error ?? "Could not confirm age.");
+    if (!confirmed) {
       return;
     }
     onComplete();
     onClose();
   }
+
+  async function handleSignOutFromAdult() {
+    setLoading(true);
+    setError(null);
+    await supabase.auth.signOut();
+    setLoading(false);
+    setStep("credentials");
+    setAuthMode("sign-in");
+    setAdultChecked(false);
+    setError(copy.auth.adultAbandonMessage);
+  }
+
+  async function handleClose() {
+    if (step === "adult") {
+      await handleSignOutFromAdult();
+      return;
+    }
+    onClose();
+  }
+
+  const credentialsReady =
+    email.length > 0 &&
+    password.length >= 8 &&
+    (authMode === "sign-in" || adultChecked);
 
   return (
     <div
@@ -116,14 +171,14 @@ export function SignInSheet({
         <div className="mb-4 flex items-center justify-between">
           <h2 className="font-[family-name:var(--font-barlow)] text-xl font-bold">
             {step === "adult"
-              ? "One more thing"
+              ? copy.auth.adultStepTitle
               : authMode === "sign-up"
                 ? copy.auth.signUpTitle
                 : copy.auth.signInTitle}
           </h2>
           <button
             type="button"
-            onClick={onClose}
+            onClick={() => void handleClose()}
             className="text-[var(--muted)] hover:text-[var(--text)]"
             aria-label="Close"
           >
@@ -132,7 +187,9 @@ export function SignInSheet({
         </div>
 
         {error ? (
-          <p className="mb-3 text-sm text-[var(--rose)]" role="alert">{error}</p>
+          <p className="mb-3 text-sm text-[var(--rose)]" role="alert">
+            {error}
+          </p>
         ) : null}
 
         {step === "credentials" && (
@@ -170,15 +227,27 @@ export function SignInSheet({
               onChange={(e) => setPassword(e.target.value)}
               className="rounded-xl border border-[var(--border)] bg-[var(--raised)] px-4 py-3 text-[var(--text)]"
             />
-            <Button type="submit" disabled={loading || !email || !password}>
+            {authMode === "sign-up" ? (
+              <label className="flex items-start gap-3 text-sm">
+                <input
+                  type="checkbox"
+                  checked={adultChecked}
+                  onChange={(e) => setAdultChecked(e.target.checked)}
+                  className="mt-1 h-4 w-4 accent-[var(--orange)]"
+                />
+                <span>{copy.auth.adultCheckbox}</span>
+              </label>
+            ) : null}
+            <Button type="submit" disabled={loading || !credentialsReady}>
               {authMode === "sign-up" ? copy.auth.signUp : copy.auth.signIn}
             </Button>
             <Button
               type="button"
               variant="ghost"
-              onClick={() =>
-                setAuthMode(authMode === "sign-in" ? "sign-up" : "sign-in")
-              }
+              onClick={() => {
+                setAuthMode(authMode === "sign-in" ? "sign-up" : "sign-in");
+                setError(null);
+              }}
             >
               {authMode === "sign-in"
                 ? copy.auth.needAccount
@@ -192,6 +261,9 @@ export function SignInSheet({
 
         {step === "adult" && (
           <div className="flex flex-col gap-4">
+            <p className="text-sm text-[var(--muted)]">
+              {copy.auth.adultPendingHint}
+            </p>
             <label className="flex items-start gap-3 text-sm">
               <input
                 type="checkbox"
@@ -203,6 +275,14 @@ export function SignInSheet({
             </label>
             <Button onClick={() => void confirmAdult()} disabled={loading}>
               Continue
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              disabled={loading}
+              onClick={() => void handleSignOutFromAdult()}
+            >
+              {copy.auth.signOut}
             </Button>
           </div>
         )}
