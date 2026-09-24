@@ -51,7 +51,15 @@ export const copy = {
   },
 
   auth: {
+    signInTitle: "Sign in",
+    signUpTitle: "Create account",
+    signIn: "Sign in",
+    signUp: "Create account",
+    needAccount: "Need an account? Sign up",
+    haveAccount: "Already have an account? Sign in",
+    termsNote: "By continuing you agree to our Terms and Privacy Policy.",
     adultCheckbox: "I'm 18 or older",
+    demoNote: "Demo preview — no account needed. Accept is disabled.",
   },
 
   screening: {

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { copy } from "@/lib/copy";
 
 export default function HomePage() {
@@ -11,6 +12,12 @@ export default function HomePage() {
       <p className="text-center text-[var(--muted)]">
         {copy.home.empty("Cowboys at Eagles, 7:20")}
       </p>
+      <Link
+        href="/demo"
+        className="text-sm text-[var(--muted)] underline-offset-2 hover:underline"
+      >
+        Preview challenge views
+      </Link>
     </main>
   );
 }
