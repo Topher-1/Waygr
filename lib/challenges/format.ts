@@ -40,7 +40,7 @@ export function formatCallFromParts(input: CallFormatInput): string {
       return `${teamAbbr(input, pick as "home" | "away")} leads at half`;
     case "quarter_winner": {
       const abbr = teamAbbr(input, pick as "home" | "away");
-      return `${abbr} win Q${input.quarter ?? "?"}`;
+      return `${abbr} wins Q${input.quarter ?? "?"}`;
     }
     default:
       return "a call";
