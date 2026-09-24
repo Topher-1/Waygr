@@ -22,7 +22,7 @@ Trace Phase 1 so Cursor can execute **one PR per step** (HANDOFF / BUILD Prompt 
 |------|-------|
 | Platform | Next 15 App Router, TS, Tailwind, Serwist, Vercel |
 | Backend | Supabase (Postgres, Auth, Realtime, Storage, Edge Functions, Cron) + Drizzle migrations |
-| Stakes | Forfeits only — no money / drinks / prizes / payment links |
+| Stakes | Forfeits — drinks, food, honor money; no payment rails / prizes / escrow |
 | Lines | Creator sets spread/total in 0.5 steps; lock at kickoff |
 | Leagues | NFL, NCAAF, NBA (NCAAB before March) |
 | Referee | Score feed only; admin void |
@@ -159,7 +159,7 @@ Identical to HANDOFF / BUILD Prompt to paste / `prd.md` slices. One PR each.
 
 1. Scaffold, tokens, copy + banned-words, schema, migrations, RLS  
 2. ScoreProvider / BALLDONTLIE, `poll-scores` / `settle` / `sweep`, settle + 24 tests + replay  
-3. Auth + 18+ + challenge page views + link preview  
+3. Auth + 21+ + challenge page views + link preview  
 4. Games API, create sheet, Home, cancel, rematch  
 5. Live + Realtime + meter + trash talk  
 6. Forfeits + result cards + Profile + Rivalry *(Designer assets first)*  
@@ -172,7 +172,7 @@ Engineer review gate on each Cursor PR (when Argos launches): **RLS · settle pu
 
 ## 8. Non-goals (BUILD — stay out)
 
-Money in any form; stranger matching / public feed; groups/rooms/leaderboards/counter-offers (P2); native / iMessage / Live Activities (P3); Waygr texting/emailing people; chat outside a challenge; leagues beyond NFL/NCAAF/NBA in Phase 1.
+Payment rails (Stripe, Venmo/Apple Pay linking, wallets, escrow); prizes; stranger matching / public feed; groups/rooms/leaderboards/counter-offers (P2); native / iMessage / Live Activities (P3); Waygr texting/emailing people; chat outside a challenge; leagues beyond NFL/NCAAF/NBA in Phase 1. Honor-system money on the line is OK — settlement is outside the app.
 
 ---
 

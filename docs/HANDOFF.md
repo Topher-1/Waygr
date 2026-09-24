@@ -14,7 +14,7 @@ Code complete ~Nov 13 · NFL Sunday dogfood Nov 15 & 22 · Private beta Thanksgi
 ## Steps (one PR each)
 1. Scaffold, tokens, copy+banned-words, schema, migrations, RLS
 2. ScoreProvider / BALLDONTLIE, poll-scores / settle / sweep Edge Functions
-3. Auth + 18+ + challenge page views + link preview
+3. Auth + 21+ + challenge page views + link preview
 4. Games API, create sheet, Home, cancel, rematch
 5. Live + Realtime + meter + trash talk
 6. Forfeits + result cards + Profile + Rivalry *(needs Designer assets)*

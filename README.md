@@ -1,10 +1,10 @@
 # Waygr
 
-Call your shot against a friend on a live game. The score feed settles it. The loser owes a forfeit — not money.
+Call your shot against a friend on a live game. The score feed settles it. The loser owes what's on the line — drinks, food, honor money, or a social forfeit. No payment rails in v1.
 
 **Build in public.** Phase 1 = installable PWA (Next.js 15 · Supabase · Vercel). Source of truth: [`docs/BUILD-BRIEF.md`](docs/BUILD-BRIEF.md).
 
-Status: **Step 3 of 8** — Auth, 18+ gate, challenge page (five views), link preview OG.
+Status: **Step 3 of 8** — Auth, 21+ gate, challenge page (five views), link preview OG.
 
 ## Docs
 
@@ -98,7 +98,7 @@ Replay fixture: `fixtures/nfl-full-game.json` (KC 27, BUF 20). Vitest replays ea
 
 ## Non-goals (Phase 1)
 
-No money, payment links, stranger matching, groups/rooms, native app, or contact spam.
+No payment rails (Stripe/Venmo OAuth/Apple Pay), prizes, stranger matching, groups/rooms, native app, or contact spam. Honor-system money on the line is OK — settle outside the app.
 
 ---
 

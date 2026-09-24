@@ -15,7 +15,8 @@ Before starting any task, read `/docs` in this order:
 
 - Next.js **15** App Router, TypeScript, Tailwind, Serwist, Vercel
 - Supabase (Postgres, Auth, Realtime, Storage, Edge Functions, Cron) + Drizzle migrations
-- **Forfeits only** — no money, drinks, prizes, or payment links anywhere
+- **Forfeits** — drinks, food, honor-system money OK; no payment rails, prizes, or escrow
+- **21+** age gate (not 18)
 - First signed-in non-creator takes the other side; lock at kickoff
 - Leagues: NFL, NCAAF, NBA (NCAAB before March)
 - Score feed only; `ScoreProvider` interface; BALLDONTLIE first
@@ -24,7 +25,8 @@ Before starting any task, read `/docs` in this order:
 
 ## Non-goals (Phase 1)
 
-- Money in any form (payments, payment links, prizes, sportsbook odds)
+- Payment rails (Stripe, Venmo/Apple Pay linking, wallets, escrow) — honor money on the line is OK
+- Prizes or sportsbook odds
 - Stranger matching or public challenge feed
 - Groups, rooms, leaderboards, counter-offers (Phase 2)
 - Native app, iMessage, Live Activities, widgets (Phase 3)

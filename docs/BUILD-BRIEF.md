@@ -63,11 +63,11 @@ Backend     Storage, Edge Functions, Cron. Drizzle for
                                                          Standfast
             schema and migrations
 
-            Forfeits only: concession card, jersey
-                                                         See Guardrails in the Product
-Stakes      swap, custom. No money, drinks, prizes or
-                                                         brief
-            payment links anywhere
+            Forfeits: concession, jersey swap, drink/
+                                                         Honor-system money OK;
+Stakes      food presets, custom text, honor-system      payment rails deferred
+            money ($5/$10/$20). No in-app payment       (Venmo/Apple Pay later)
+            rails, prizes, or escrow
 
 Who
 takes       The first signed-in person, other than the   Works in 1:1 texts and group
@@ -230,7 +230,7 @@ viewer's local time.
     handle text unique not null,                    -- from the sign-in name, editable
      display_name text not null,                  -- becomes 'Deleted user' on account deletion
      avatar_url text,
-     adult_confirmed_at timestamptz,              -- set by the 18+ checkbox; required to create or
+     adult_confirmed_at timestamptz,              -- set by the 21+ checkbox; required to create or
      referred_by uuid references profiles(id), -- creator of the first challenge this user accep
      jersey_team text,                            -- team code while a jersey-swap forfeit is activ
      jersey_until timestamptz,
@@ -566,7 +566,7 @@ Screens and flows
 The two flows that matter most, with hard limits:
 
 Accept (new user, from a text). Open link → see the challenge → tap "I'm in" → sign in
-with Apple, Google or phone code (one sheet, plus the 18+ checkbox the first time) →
+with Apple, Google or phone code (one sheet, plus the 21+ checkbox the first time) →
 "You're on." At most 3 taps plus the sign-in provider's own screen. The page is readable
 before any sign-in. Right after accepting, show "Your turn" with three one-tap calls on
 tonight's games.
@@ -584,7 +584,7 @@ every step (spread, the favorite, the last forfeit used), so a fast user just ta
                                 your night," forfeit action, Rematch, Share. Void: reason and
                                 "Make a new call"
 
- Sign-in                        Apple, Google, phone code; 18+ checkbox; links to terms and
+ Sign-in                        Apple, Google, phone code; 21+ checkbox; links to terms and
                 Overlay
  sheet                          privacy
 
@@ -597,8 +597,8 @@ every step (spread, the favorite, the last forfeit used), so a fast user just ta
                                 Game list grouped by day and league with team colors, then
                                 market picker, side, line stepper (0.5 steps), then forfeit:
  Create         Bottom sheet
-                                concession, jersey swap or custom (80 characters max,
-                                screened)
+                                preset grid (drinks, food, honor money, concession,
+                                jersey swap) or custom (80 characters max, screened)
 
                                 Loser: share the concession card, or record and upload proof.
  Forfeit        /f/[id]
@@ -624,9 +624,10 @@ Screen rules:
    three steps with the Share icon. iOS web push only works once the app is on the home
    screen.
 
-   Custom forfeit screening: reject text that mentions alcohol, drinking, money, dollar
-   amounts, payment apps or anything dangerous, with the message "Keep it legal and
-   sober. Try a jersey or a public apology." Keep the term list in lib/forfeit-screen.ts .
+   Custom forfeit screening: allow drinks, food, and honor-system money ($5, ten bucks,
+   "Venmo me later"). Reject payment rails (Stripe, Apple Pay, payment-app deep links,
+   OAuth) and dangerous terms. Copy in lib/copy.ts screening.rejected; term list in
+   lib/forfeit-screen.ts .
 
    Blocking: blocked people can't take your open challenges; their messages are hidden
    from you.
@@ -718,7 +719,7 @@ least one challenge that week.
 
 
 Non-goals for Phase 1
-   Money in any form: payments, payment links, prizes, sportsbook odds.
+   Payment rails: Stripe, Venmo/Apple Pay linking, wallets, escrow, payment links. Honor-system money on the line is OK — settlement is outside the app. No prizes or sportsbook odds.
 
    Matching strangers or a public feed of challenges.
 
@@ -765,12 +766,12 @@ Non-goals for Phase 1
   Custom proof uploads, the winner can confirm or reject, and it auto-confirms after 72
   hours.
 
-  Custom forfeit screening blocks alcohol, money and payment-app terms.
+  Custom forfeit screening allows drinks and honor-system money; blocks payment rails and dangerous terms.
 
   A test fails the build if any string in lib/copy.ts contains the whole words "bet,"
   "wager," "odds" or "payout."
 
-  The 18+ checkbox is required before a person's first create or accept.
+  The 21+ checkbox is required before a person's first create or accept.
 
   Colors come only from the Brand brief tokens. axe reports no serious or critical issues
   on Challenge, Home and Create in both themes, and layouts hold at 200% text size.
@@ -826,7 +827,7 @@ Prompt to paste
  Work in this order, one PR each, and run the tests before telling me a step is done:
 1. Scaffold, tokens.css, copy.ts with the banned-words test, schema, migrations, RLS policies
 2. ScoreProvider adapter for BALLDONTLIE, the poll-scores, settle and sweep Edge Functions, S
-3. Auth (Apple, Google, phone), the 18+ gate, the challenge page with all five views, the lin
+3. Auth (Apple, Google, phone), the 21+ gate, the challenge page with all five views, the lin
 4. Games API, the create sheet, Home, cancel and rematch.
 5. Live view with Realtime scores, the challenge meter and trash talk.
 6. Forfeits (concession share, jersey frame, custom proof), result cards, Profile and Rivalry

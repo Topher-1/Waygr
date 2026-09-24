@@ -138,7 +138,7 @@ Adapter: map statuses → `game_status`; at halftime/break set `period` to **nex
 
 - Origin-only private scaffold (canceled — home is public GitHub).  
 - Prisma / Firebase / Expo / custom auth frameworks.  
-- Money, payment links, sportsbook odds, stranger matching, groups (P2), native (P3).  
+- Payment rails (Stripe, Venmo/Apple Pay linking, wallets, escrow); prizes; sportsbook odds; stranger matching, groups (P2), native (P3). Honor-system money on the line is OK.  
 - Self-reported scores as referee.  
 - Inventing Brand colors or copy voice.  
 - Launching more than one CA, or a second CA the same day after two Waygr runs.

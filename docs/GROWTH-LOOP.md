@@ -106,7 +106,7 @@ Dev went 5–1").
 
 One host can turn a party into 10 to 30 new users in an evening, and they go home with
 rivals they'll challenge from the couch. Rooms in bars follow the same guardrails: forfeits
-only, no prizes, no drinks as stakes.
+only, no prizes, no payment rails. Drinks and honor money on the line are OK at 21+.
 
 
 Launch calendar and seed groups

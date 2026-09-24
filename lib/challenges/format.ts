@@ -52,7 +52,9 @@ export function formatForfeit(challenge: ChallengeLanding): string {
     case "jersey_swap":
       return "wears the other team's colors for a week";
     case "custom":
-      return challenge.forfeitText ?? "pays a custom forfeit";
+      return challenge.forfeitText
+        ? `owes ${challenge.forfeitText}`
+        : "owes a custom forfeit";
     default:
       return "owes a forfeit";
   }

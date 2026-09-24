@@ -89,7 +89,7 @@ export function SignInSheet({
 
   async function confirmAdult() {
     if (!adultChecked) {
-      setError("Confirm you are 18 or older to continue.");
+      setError(copy.auth.adultConfirmError);
       return;
     }
     setLoading(true);
