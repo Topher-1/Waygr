@@ -43,6 +43,8 @@ BUILD · Acceptance criteria all pass; dogfood NFL Sundays Nov 15 & 22; private 
 
 Designer assets (**wordmark SVG light+dark; app icon 1024 + PWA sizes; templates for link preview 1200×630, result card 1080×1350, story 1080×1920**) required **before step 6** (forfeits / result cards). Direction: BRAND-BRIEF + `waygr-brand-preview.png`. (HANDOFF.)
 
+**Gate CLEAR 2026-09-24** — assets in `docs/brand/` (see `docs/brand/DESIGNER-GATE.md` + `MANIFEST.md`).
+
 ---
 
 ## Vertical slices = BUILD Prompt to paste (steps 1–8)
@@ -100,7 +102,7 @@ Order confirmed identical to BUILD-BRIEF “Prompt to paste” and HANDOFF steps
 
 ### Slice 6 — Forfeits + cards + Profile + Rivalry
 
-**Build:** Forfeits (concession share, jersey frame, custom proof), result cards, Profile, Rivalry. **Blocked on Designer assets.**  
+**Build:** Forfeits (concession share, jersey frame, custom proof), result cards, Profile, Rivalry. **Designer assets CLEAR** (`docs/brand/`, 2026-09-24). Was blocked on Designer assets.  
 **Merge when:**
 
 - Concession card opens native share sheet with image on iOS/Android and marks forfeit paid when sharing completes; desktop → download.
