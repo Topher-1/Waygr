@@ -9,7 +9,6 @@ import { copy } from "@/lib/copy";
 
 type PageProps = {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ accept?: string }>;
 };
 
 export const dynamic = "force-dynamic";
@@ -54,9 +53,8 @@ export async function generateMetadata({
   }
 }
 
-export default async function ChallengePage({ params, searchParams }: PageProps) {
+export default async function ChallengePage({ params }: PageProps) {
   const { slug } = await params;
-  const { accept: acceptParam } = await searchParams;
 
   let challenge;
   try {
@@ -73,11 +71,6 @@ export default async function ChallengePage({ params, searchParams }: PageProps)
   const view = resolveChallengeView(challenge, viewer?.id ?? null);
 
   return (
-    <ChallengeClient
-      challenge={challenge}
-      view={view}
-      viewer={viewer}
-      autoAccept={acceptParam === "1"}
-    />
+    <ChallengeClient challenge={challenge} view={view} viewer={viewer} />
   );
 }

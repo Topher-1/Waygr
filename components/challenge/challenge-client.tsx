@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { copy } from "@/lib/copy";
 import type { ChallengeLanding, ChallengeView } from "@/lib/challenges/types";
 import type { ViewerProfile } from "@/lib/auth/profile";
@@ -16,14 +16,14 @@ type ChallengeClientProps = {
   challenge: ChallengeLanding;
   view: ChallengeView;
   viewer: ViewerProfile | null;
-  autoAccept?: boolean;
+  demoMode?: boolean;
 };
 
 export function ChallengeClient({
   challenge,
   view: initialView,
   viewer,
-  autoAccept = false,
+  demoMode = false,
 }: ChallengeClientProps) {
   const router = useRouter();
   const [view, setView] = useState<ChallengeView>(initialView);
@@ -34,8 +34,6 @@ export function ChallengeClient({
   const [accepted, setAccepted] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-
-  const nextPath = `/c/${challenge.slug}?accept=1`;
 
   const acceptChallenge = useCallback(async () => {
     setLoading(true);
@@ -61,12 +59,8 @@ export function ChallengeClient({
       return;
     }
 
-    if (body.reason === "adult_required") {
-      setShowSignIn(true);
-      return;
-    }
-
-    if (body.reason === "unauthorized") {
+    if (body.reason === "adult_required" || body.reason === "unauthorized") {
+      setSignInMode(body.reason === "adult_required" ? "adult-only" : "sign-in");
       setShowSignIn(true);
       return;
     }
@@ -80,19 +74,10 @@ export function ChallengeClient({
     );
   }, [challenge.id, router]);
 
-  useEffect(() => {
-    if (!autoAccept || !viewer || initialView !== "open") {
-      return;
-    }
-    if (!viewer.adultConfirmedAt) {
-      setSignInMode("adult-only");
-      setShowSignIn(true);
-      return;
-    }
-    void acceptChallenge();
-  }, [autoAccept, viewer, initialView, acceptChallenge]);
-
   function handleImIn() {
+    if (demoMode) {
+      return;
+    }
     if (!viewer) {
       setSignInMode("sign-in");
       setShowSignIn(true);
@@ -106,11 +91,7 @@ export function ChallengeClient({
     void acceptChallenge();
   }
 
-  function handleSignedIn() {
-    router.refresh();
-  }
-
-  function handleAdultConfirmed() {
+  function handleAuthComplete() {
     router.refresh();
     void acceptChallenge();
   }
@@ -132,7 +113,11 @@ export function ChallengeClient({
               {error ? (
                 <p className="text-center text-sm text-[var(--rose)]">{error}</p>
               ) : null}
-              <Button onClick={handleImIn} disabled={loading} className="w-full">
+              <Button
+                onClick={handleImIn}
+                disabled={loading || demoMode}
+                className="w-full"
+              >
                 {copy.challenge.accept}
               </Button>
               <Button variant="ghost" className="w-full">
@@ -207,14 +192,14 @@ export function ChallengeClient({
         )}
       </ChallengeShell>
 
-      <SignInSheet
-        open={showSignIn}
-        onClose={() => setShowSignIn(false)}
-        onSignedIn={handleSignedIn}
-        nextPath={nextPath}
-        mode={signInMode}
-        onAdultConfirmed={handleAdultConfirmed}
-      />
+      {!demoMode && (
+        <SignInSheet
+          open={showSignIn}
+          onClose={() => setShowSignIn(false)}
+          mode={signInMode}
+          onComplete={handleAuthComplete}
+        />
+      )}
     </>
   );
 }

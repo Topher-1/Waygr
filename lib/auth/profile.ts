@@ -48,7 +48,7 @@ export async function getViewerProfile(): Promise<ViewerProfile | null> {
   };
 }
 
-/** Create or refresh profile after OAuth / phone sign-in. */
+/** Create or refresh profile after email sign-up / sign-in. */
 export async function ensureProfileForUser(user: {
   id: string;
   email?: string;
@@ -78,7 +78,6 @@ export async function ensureProfileForUser(user: {
     (typeof meta.full_name === "string" && meta.full_name) ||
     (typeof meta.name === "string" && meta.name) ||
     user.email?.split("@")[0] ||
-    user.phone ||
     "Player";
 
   const avatarUrl =

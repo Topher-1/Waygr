@@ -64,9 +64,9 @@ npm run dev
 ## Supabase setup
 
 1. Create dev and prod Supabase projects.
-2. Enable Auth providers in Supabase Dashboard → Authentication → Providers:
-   - **Google** and **Phone** (required for Step 3)
-   - **Apple** optional until `NEXT_PUBLIC_APPLE_SIGN_IN_ENABLED=true` and Apple Developer account is wired
+2. Enable **Email** auth in Supabase Dashboard → Authentication → Providers (email + password; disable OAuth for now).
+   - For local dev, you may disable “Confirm email” so sign-up is instant.
+   - Set Site URL / redirect URLs to `NEXT_PUBLIC_APP_URL` and `/auth/callback`.
 3. Run migrations: `npm run db:migrate` (or apply `drizzle/*.sql` via Supabase SQL editor).
 4. Apply migrations through `drizzle/0004_accept_challenge_atomic.sql` (includes Step 2 settle RPC)
 5. Set `CRON_SECRET` in Supabase Edge Function secrets (required — jobs reject requests without a matching `x-cron-secret` header)
@@ -85,10 +85,15 @@ npm run test:replay       # settle.test.ts + replay-nfl.test.ts only
 
 Replay fixture: `fixtures/nfl-full-game.json` (KC 27, BUF 20). Vitest replays each timeline step through `runPollScores` + `settleGames` without a live BALLDONTLIE key.
 
+## Step 3 auth (scope change)
+
+- **Email + password** only (Standfast pattern). OAuth (Apple / Google / phone) deferred.
+- **`/demo`** — preview all five challenge views without an account (`?view=open|taken|live|settled|void`).
+
 ## Chris-only parks (Step 3 decisions)
 
 1. **Challenge link domain** — use `NEXT_PUBLIC_APP_URL` (and Vercel preview URLs per deploy). No custom domain yet.
-2. **Apple Developer account** — Google + phone ship first; Apple button is stubbed until `NEXT_PUBLIC_APPLE_SIGN_IN_ENABLED=true` and Supabase Apple provider are configured ($99/yr).
+2. **OAuth providers** — deferred; email+password ships first.
 3. **BALLDONTLIE tier** — out of scope for Step 3 (Step 2 uses fixtures in tests).
 
 ## Non-goals (Phase 1)

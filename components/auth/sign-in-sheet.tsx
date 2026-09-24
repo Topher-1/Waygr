@@ -1,104 +1,90 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { copy } from "@/lib/copy";
 import { Button } from "@/components/ui/button";
-import { APPLE_SIGN_IN_ENABLED, authCallbackUrl } from "@/lib/auth/providers";
 
 type SignInSheetProps = {
   open: boolean;
   onClose: () => void;
-  onSignedIn: () => void;
-  nextPath: string;
   mode: "sign-in" | "adult-only";
-  onAdultConfirmed: () => void;
+  onComplete: () => void;
 };
 
-type Step = "providers" | "phone" | "adult";
+type Step = "credentials" | "adult";
 
 export function SignInSheet({
   open,
   onClose,
-  onSignedIn,
-  nextPath,
   mode,
-  onAdultConfirmed,
+  onComplete,
 }: SignInSheetProps) {
   const [step, setStep] = useState<Step>(
-    mode === "adult-only" ? "adult" : "providers",
+    mode === "adult-only" ? "adult" : "credentials",
   );
-  const [phone, setPhone] = useState("");
-  const [otp, setOtp] = useState("");
-  const [otpSent, setOtpSent] = useState(false);
+  const [authMode, setAuthMode] = useState<"sign-in" | "sign-up">("sign-in");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [adultChecked, setAdultChecked] = useState(false);
+
+  useEffect(() => {
+    if (open) {
+      setStep(mode === "adult-only" ? "adult" : "credentials");
+      setError(null);
+    }
+  }, [open, mode]);
 
   if (!open) {
     return null;
   }
 
   const supabase = createClient();
-  const redirectTo = authCallbackUrl(nextPath);
 
-  async function signInWithGoogle() {
-    setLoading(true);
-    setError(null);
-    const { error: authError } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: { redirectTo },
-    });
-    if (authError) {
-      setError(authError.message);
-      setLoading(false);
+  async function setupProfile(): Promise<boolean> {
+    const res = await fetch("/api/auth/setup-profile", { method: "POST" });
+    if (!res.ok) {
+      setError("Could not set up your profile. Try again.");
+      return false;
     }
+    const body = (await res.json()) as {
+      profile?: { adultConfirmedAt: string | null };
+    };
+    return !body.profile?.adultConfirmedAt;
   }
 
-  async function signInWithApple() {
-    if (!APPLE_SIGN_IN_ENABLED) {
-      setError("Sign in with Apple is coming soon. Use Google or phone for now.");
-      return;
-    }
+  async function handleCredentials() {
     setLoading(true);
     setError(null);
-    const { error: authError } = await supabase.auth.signInWithOAuth({
-      provider: "apple",
-      options: { redirectTo },
-    });
-    if (authError) {
-      setError(authError.message);
-      setLoading(false);
-    }
-  }
 
-  async function sendOtp() {
-    setLoading(true);
-    setError(null);
-    const { error: authError } = await supabase.auth.signInWithOtp({ phone });
+    const result =
+      authMode === "sign-up"
+        ? await supabase.auth.signUp({ email, password })
+        : await supabase.auth.signInWithPassword({ email, password });
+
     setLoading(false);
-    if (authError) {
-      setError(authError.message);
-      return;
-    }
-    setOtpSent(true);
-  }
 
-  async function verifyOtp() {
-    setLoading(true);
-    setError(null);
-    const { error: authError } = await supabase.auth.verifyOtp({
-      phone,
-      token: otp,
-      type: "sms",
-    });
-    setLoading(false);
-    if (authError) {
-      setError(authError.message);
+    if (result.error) {
+      setError(result.error.message);
       return;
     }
-    onSignedIn();
-    setStep("adult");
+
+    if (authMode === "sign-up" && result.data.user && !result.data.session) {
+      setError("Check your email to confirm your account, then sign in.");
+      setAuthMode("sign-in");
+      return;
+    }
+
+    const needsAdult = await setupProfile();
+    if (needsAdult) {
+      setStep("adult");
+      return;
+    }
+
+    onComplete();
+    onClose();
   }
 
   async function confirmAdult() {
@@ -115,7 +101,7 @@ export function SignInSheet({
       setError(body.error ?? "Could not confirm age.");
       return;
     }
-    onAdultConfirmed();
+    onComplete();
     onClose();
   }
 
@@ -129,7 +115,11 @@ export function SignInSheet({
       <div className="w-full max-w-md rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6 shadow-xl">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="font-[family-name:var(--font-barlow)] text-xl font-bold">
-            {step === "adult" ? "One more thing" : "Sign in"}
+            {step === "adult"
+              ? "One more thing"
+              : authMode === "sign-up"
+                ? copy.auth.signUpTitle
+                : copy.auth.signInTitle}
           </h2>
           <button
             type="button"
@@ -145,75 +135,59 @@ export function SignInSheet({
           <p className="mb-3 text-sm text-[var(--rose)]" role="alert">{error}</p>
         ) : null}
 
-        {step === "providers" && (
-          <div className="flex flex-col gap-3">
-            <Button onClick={signInWithGoogle} disabled={loading}>
-              Continue with Google
+        {step === "credentials" && (
+          <form
+            className="flex flex-col gap-3"
+            onSubmit={(e) => {
+              e.preventDefault();
+              void handleCredentials();
+            }}
+          >
+            <label className="text-sm text-[var(--muted)]" htmlFor="email">
+              Email
+            </label>
+            <input
+              id="email"
+              type="email"
+              autoComplete="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="rounded-xl border border-[var(--border)] bg-[var(--raised)] px-4 py-3 text-[var(--text)]"
+            />
+            <label className="text-sm text-[var(--muted)]" htmlFor="password">
+              Password
+            </label>
+            <input
+              id="password"
+              type="password"
+              autoComplete={
+                authMode === "sign-up" ? "new-password" : "current-password"
+              }
+              required
+              minLength={8}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="rounded-xl border border-[var(--border)] bg-[var(--raised)] px-4 py-3 text-[var(--text)]"
+            />
+            <Button type="submit" disabled={loading || !email || !password}>
+              {authMode === "sign-up" ? copy.auth.signUp : copy.auth.signIn}
             </Button>
             <Button
-              variant="secondary"
-              onClick={() => setStep("phone")}
-              disabled={loading}
+              type="button"
+              variant="ghost"
+              onClick={() =>
+                setAuthMode(authMode === "sign-in" ? "sign-up" : "sign-in")
+              }
             >
-              Continue with phone
-            </Button>
-            <Button
-              variant="secondary"
-              onClick={signInWithApple}
-              disabled={loading || !APPLE_SIGN_IN_ENABLED}
-            >
-              {APPLE_SIGN_IN_ENABLED
-                ? "Continue with Apple"
-                : "Apple (coming soon)"}
+              {authMode === "sign-in"
+                ? copy.auth.needAccount
+                : copy.auth.haveAccount}
             </Button>
             <p className="text-center text-xs text-[var(--muted)]">
-              By continuing you agree to our Terms and Privacy Policy.
+              {copy.auth.termsNote}
             </p>
-          </div>
-        )}
-
-        {step === "phone" && (
-          <div className="flex flex-col gap-3">
-            {!otpSent ? (
-              <>
-                <label className="text-sm text-[var(--muted)]" htmlFor="phone">
-                  Phone number (E.164, e.g. +15551234567)
-                </label>
-                <input
-                  id="phone"
-                  type="tel"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  className="rounded-xl border border-[var(--border)] bg-[var(--raised)] px-4 py-3 text-[var(--text)]"
-                  placeholder="+1..."
-                />
-                <Button onClick={sendOtp} disabled={loading || !phone}>
-                  Send code
-                </Button>
-              </>
-            ) : (
-              <>
-                <label className="text-sm text-[var(--muted)]" htmlFor="otp">
-                  Enter the code we sent
-                </label>
-                <input
-                  id="otp"
-                  type="text"
-                  inputMode="numeric"
-                  value={otp}
-                  onChange={(e) => setOtp(e.target.value)}
-                  className="rounded-xl border border-[var(--border)] bg-[var(--raised)] px-4 py-3 text-[var(--text)]"
-                  placeholder="123456"
-                />
-                <Button onClick={verifyOtp} disabled={loading || !otp}>
-                  Verify
-                </Button>
-              </>
-            )}
-            <Button variant="ghost" onClick={() => setStep("providers")}>
-              Back
-            </Button>
-          </div>
+          </form>
         )}
 
         {step === "adult" && (
@@ -227,7 +201,7 @@ export function SignInSheet({
               />
               <span>{copy.auth.adultCheckbox}</span>
             </label>
-            <Button onClick={confirmAdult} disabled={loading}>
+            <Button onClick={() => void confirmAdult()} disabled={loading}>
               Continue
             </Button>
           </div>
