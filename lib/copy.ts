@@ -60,6 +60,13 @@ export const copy = {
     waiting: "Waiting on someone",
     tonight: "Tonight",
     quickCall: "One-tap call",
+    howItWorksTitle: "How it works",
+    howItWorksSteps: [
+      "Pick a game and your call.",
+      "Share the link — friend takes the other side.",
+      "Winner calls it. Loser pays the forfeit.",
+    ] as const,
+    browseSlate: "Browse tonight's slate",
   },
 
   create: {
@@ -100,6 +107,14 @@ export const copy = {
     termsNote: "By continuing you agree to our Terms and Privacy Policy.",
     adultCheckbox: "I'm 21 or older",
     adultConfirmError: "Confirm you are 21 or older to continue.",
+    adultStepTitle: "One more thing",
+    adultPendingHint:
+      "Confirm you're 21+ to use Waygr, or sign out and come back later.",
+    adultAbandonMessage:
+      "You're signed in but still need to confirm you're 21+. Sign in to pick up where you left off.",
+    alreadyRegistered:
+      "You already have an account. Sign in to finish setup.",
+    signOut: "Sign out",
     demoNote: "Demo preview — no account needed. Accept is disabled.",
   },
 

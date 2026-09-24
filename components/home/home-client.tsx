@@ -62,6 +62,14 @@ export function HomeClient({ viewer, feed }: HomeClientProps) {
   const tonightLabel =
     feed?.tonightQuickCalls[0]?.label ?? "Check tonight's slate";
 
+  const feedIsEmpty =
+    viewer &&
+    feed &&
+    feed.live.length === 0 &&
+    feed.owedForfeits.length === 0 &&
+    feed.openWaiting.length === 0 &&
+    feed.tonightQuickCalls.length === 0;
+
   return (
     <>
       <main className="mx-auto flex min-h-screen max-w-lg flex-col px-4 pb-28 pt-6">
@@ -200,12 +208,36 @@ export function HomeClient({ viewer, feed }: HomeClientProps) {
               </section>
             )}
 
-            {feed.live.length === 0 &&
-              feed.owedForfeits.length === 0 &&
-              feed.openWaiting.length === 0 &&
-              feed.tonightQuickCalls.length === 0 && (
-                <p className="text-[var(--muted)]">{copy.home.empty(tonightLabel)}</p>
-              )}
+            {feedIsEmpty ? (
+              <div className="flex flex-col gap-6">
+                <section className="rounded-xl border border-[var(--border)] bg-[var(--raised)] p-5">
+                  <h2 className="mb-4 font-[family-name:var(--font-barlow)] text-lg font-bold">
+                    {copy.home.howItWorksTitle}
+                  </h2>
+                  <ol className="space-y-3">
+                    {copy.home.howItWorksSteps.map((tip, index) => (
+                      <li key={tip} className="flex gap-3 text-sm">
+                        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[var(--orange)] font-semibold text-[var(--on-accent)]">
+                          {index + 1}
+                        </span>
+                        <span className="pt-0.5 text-[var(--text)]">{tip}</span>
+                      </li>
+                    ))}
+                  </ol>
+                </section>
+
+                <button
+                  type="button"
+                  onClick={() => openCreate()}
+                  className="rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 py-4 text-left transition-colors hover:border-[var(--orange)]"
+                >
+                  <p className="font-semibold">{copy.home.browseSlate}</p>
+                  <p className="mt-1 text-sm text-[var(--muted)]">
+                    {copy.home.empty(tonightLabel)}
+                  </p>
+                </button>
+              </div>
+            ) : null}
           </div>
         )}
 
