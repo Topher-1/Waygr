@@ -76,7 +76,10 @@ export const copy = {
       jersey_swap: "Jersey swap",
       custom: "Custom",
     },
-    customPlaceholder: "Loser posts a public apology…",
+    honorNote: "Honor system — settle up outside the app.",
+    customPlaceholder: "What does the loser owe?",
+    customMoneyLabel: "Custom $",
+    customMoneyPlaceholder: "Custom amount (e.g. $15)",
     cancelChallenge: "Cancel challenge",
   },
 
@@ -88,12 +91,14 @@ export const copy = {
     needAccount: "Need an account? Sign up",
     haveAccount: "Already have an account? Sign in",
     termsNote: "By continuing you agree to our Terms and Privacy Policy.",
-    adultCheckbox: "I'm 18 or older",
+    adultCheckbox: "I'm 21 or older",
+    adultConfirmError: "Confirm you are 21 or older to continue.",
     demoNote: "Demo preview — no account needed. Accept is disabled.",
   },
 
   screening: {
-    rejected: "Keep it legal and sober. Try a jersey or a public apology.",
+    rejected:
+      "Payment links and in-app transfers aren't supported. Pick a preset or describe what the loser owes — settle up outside the app.",
   },
 } as const;
 

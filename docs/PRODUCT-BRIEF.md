@@ -6,8 +6,9 @@ BUILD-BRIEF
 Summary
 Waygr is a free app for calling your shot against a friend on a live game. You drop a
 challenge into the group chat, your friend accepts from the link without installing anything,
-the score feed settles it, and the loser owes a forfeit the app puts on display. No money
-moves through the app.
+the score feed settles it, and the loser owes a forfeit the app puts on display. Honor-
+system money (e.g. $10) is fine — settlement happens outside the app. No payment rails
+in v1.
 
 Marketing is built into the product, not bolted on after. Every challenge needs a second
 person, so every challenge sent to someone new is an invite, and every result is a card
@@ -89,7 +90,8 @@ Product principles, used to break ties:
 
 3. The feed is the referee. No disputes, no self-reporting.
 
-4. Stakes are social, not financial. Losers owe a forfeit the app enforces in public.
+4. Stakes match real life — drinks, food, honor money, or social forfeits. Losers owe what
+   was on the line; the app records it, settlement happens outside.
 
 5. Every result makes something shareable.
 
@@ -115,7 +117,13 @@ pay the forfeit, rematch.
     H --> A
 
 
-The forfeit replaces "loser is charged" as the enforcement. Three kinds ship in v1:
+The forfeit replaces "loser is charged" as the enforcement. Presets and kinds in v1:
+
+   Drinks and food. Beer, a round, coffee, wings, pizza, dinner — real stakes friends
+   already use in group chats.
+
+   Honor money. $5, $10, $20 presets or a custom amount. The app records who owes what;
+   friends settle up outside (Venmo/Apple Pay linking deferred).
 
    Concession card. The loser sends a pre-written card to the chat ("I was wrong about
    the Cowboys. —Jordan"). One tap from the result screen.
@@ -123,8 +131,8 @@ The forfeit replaces "loser is charged" as the enforcement. Three kinds ship in 
    Jersey swap. The loser's avatar wears the winner's team frame for 7 days. Automatic; it
    can't be skipped.
 
-   Custom. The challenger writes it ("wear his jersey to the next watch party"). The loser
-   posts a photo or video as proof and the winner confirms.
+   Custom. Free text for anything else on the line ("wear his jersey to the watch party").
+   Screened for payment rails and dangerous terms; drinks and honor money are allowed.
 
 Unpaid forfeits show as "Owes 1" on the loser's profile, and everyone's paid rate is public.
 Welching costs reputation, which is the only currency Waygr has.
@@ -151,7 +159,7 @@ Welching costs reputation, which is the only currency Waygr has.
 
  Native iOS app: iMessage extension, Live Activities on the lock screen, widgets         3
 
- Money, drinks or anything with cash value as a stake                                    Never
+ Payment rails (Stripe, Venmo OAuth, Apple Pay, escrow)                                 Never (honor money OK)
 
 
 
@@ -204,15 +212,14 @@ chat can take the other side.
 Guardrails
 Four product rules. They cost nothing on a hobby build and are painful to retrofit later.
 
-   No money, drinks or anything with cash value as a stake, and nothing moves
-   through the app. In Texas, recording more than five bets on something of value in a day
-   meets the statutory definition of bookmaking, and bars can lose their permit over
-   gambling on premises. Social stakes keep rooms in bars possible.
+   No payment rails in v1 — no Stripe, Venmo OAuth, Apple Pay, Cash App APIs, escrow, or
+   moving money through the app. Honor-system stakes ($10, "buy me a beer") are recorded
+   on the line; friends settle outside.
 
-   Forfeits never involve alcohol, money or risk of injury. The built-in set is curated;
-   custom forfeits are screened (rules in the build brief).
+   Drinks and honor money are allowed. Custom forfeits are screened for payment rails and
+   dangerous terms (rules in the build brief).
 
-   18+ to sign up.
+   21+ to sign up.
 
    No prizes in v1. If a bar or brand wants to put up prizes later, that's a separate free-to-
    play contest, and it gets an hour of legal review first.

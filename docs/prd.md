@@ -22,11 +22,12 @@ Two friends in a 1:1 text or group chat. Creator sends a challenge link; opponen
 
 Installable PWA (Next.js 15 App Router, TypeScript, Tailwind, Serwist on Vercel; Supabase + Drizzle) that runs the full **1v1 loop**: create → accept from link → live → settle from score feed → forfeit → rematch → rivalry record → web push → analytics. (BUILD · Phases, Locked decisions, Screens and flows.)
 
-**Stack / locks (cite BUILD · Locked decisions):** forfeits only (no money); first signed-in non-creator takes the other side; creator sets lines in 0.5 steps; lock at kickoff; leagues NFL / NCAAF / NBA; referee = score feed only; ScoreProvider (BALLDONTLIE first); Supabase Cron poll; OG + result cards; PostHog; `APP_NAME` + `lib/copy.ts`; brand tokens, dark default.
+**Stack / locks (cite BUILD · Locked decisions):** forfeits including drinks, food, honor-system money (no payment rails); first signed-in non-creator takes the other side; creator sets lines in 0.5 steps; lock at kickoff; leagues NFL / NCAAF / NBA; referee = score feed only; ScoreProvider (BALLDONTLIE first); Supabase Cron poll; OG + result cards; PostHog; `APP_NAME` + `lib/copy.ts`; brand tokens, dark default.
 
 ## Non-goals (stay out — BUILD · Non-goals)
 
-- Money in any form (payments, payment links, prizes, sportsbook odds)
+- Payment rails (Stripe, Venmo/Apple Pay linking, wallets, escrow) — honor-system money on the line is OK; settlement is outside the app
+- Prizes or sportsbook odds
 - Matching strangers or a public feed of challenges
 - Group challenges, rooms, leaderboards, counter-offers (Phase 2)
 - Native app, iMessage extension, Live Activities, widgets, haptics (Phase 3)
@@ -69,14 +70,14 @@ Order confirmed identical to BUILD-BRIEF “Prompt to paste” and HANDOFF steps
 
 ### Slice 3 — Auth + challenge page + OG
 
-**Build:** Auth (Apple, Google, phone), 18+ gate, challenge page all five views, link preview OG route.  
+**Build:** Auth (Apple, Google, phone), 21+ gate, challenge page all five views, link preview OG route.  
 **Merge when:**
 
 - Signed-out person can open a challenge link and reach “You’re on.” in ≤3 taps plus the provider screen (needs a seeded/open challenge; create UI may still be Slice 4).
 - iMessage and WhatsApp link previews show the challenge image, not a generic card.
 - Challenge page main content LCP < 2.0 s (Lighthouse mobile / mid-range 4G target).
 - Nobody can accept their own challenge, accept after kickoff, or accept one already taken; two simultaneous accepts → exactly one opponent (tested).
-- The 18+ checkbox is required before a person’s first create or accept.
+- The 21+ checkbox is required before a person’s first create or accept.
 
 ### Slice 4 — Create + Home
 
@@ -105,7 +106,7 @@ Order confirmed identical to BUILD-BRIEF “Prompt to paste” and HANDOFF steps
 - Concession card opens native share sheet with image on iOS/Android and marks forfeit paid when sharing completes; desktop → download.
 - Jersey frame shows on loser’s avatar for 7 days, then disappears.
 - Custom proof uploads; winner confirm/reject; auto-confirm after 72 hours.
-- Custom forfeit screening blocks alcohol, money, and payment-app terms.
+- Custom forfeit screening allows drinks and honor-system money; blocks payment rails and dangerous terms.
 - axe: no serious/critical on Challenge, Home, Create in both themes; layouts hold at 200% text size (with Profile/Rivalry as shipped).
 
 ### Slice 7 — PWA + push + analytics

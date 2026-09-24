@@ -64,4 +64,43 @@ describe("validateCreate", () => {
     );
     expect(result).toEqual({ ok: false, reason: "invalid_forfeit_kind" });
   });
+
+  it("allows honor-system drink and money custom forfeits", () => {
+    const now = new Date("2026-09-20T20:00:00Z");
+    const kickoff = new Date(now.getTime() + 3600_000);
+    const ctx = { kickoffAt: kickoff, now, adultConfirmedAt: adult };
+
+    expect(
+      validateCreate(
+        { ...baseBody, forfeitKind: "custom", forfeitText: "a beer" },
+        ctx,
+      ).ok,
+    ).toBe(true);
+    expect(
+      validateCreate(
+        { ...baseBody, forfeitKind: "custom", forfeitText: "$10" },
+        ctx,
+      ).ok,
+    ).toBe(true);
+    expect(
+      validateCreate(
+        { ...baseBody, forfeitKind: "custom", forfeitText: "wings" },
+        ctx,
+      ).ok,
+    ).toBe(true);
+  });
+
+  it("rejects payment-rail custom forfeit text", () => {
+    const now = new Date("2026-09-20T20:00:00Z");
+    const kickoff = new Date(now.getTime() + 3600_000);
+    const result = validateCreate(
+      {
+        ...baseBody,
+        forfeitKind: "custom",
+        forfeitText: "pay me on venmo.com/username",
+      },
+      { kickoffAt: kickoff, now, adultConfirmedAt: adult },
+    );
+    expect(result).toEqual({ ok: false, reason: "forfeit_screened" });
+  });
 });

@@ -1,35 +1,27 @@
-/** Banned terms for custom forfeits (BUILD · Custom forfeit screening). */
-const BANNED_PATTERNS = [
-  /\balcohol\b/i,
-  /\bdrink(?:ing)?\b/i,
-  /\bbeers?\b/i,
-  /\bwine\b/i,
-  /\bliquor\b/i,
-  /\bshot(?:s)?\b/i,
-  /\bwhiskey\b/i,
-  /\bvodka\b/i,
-  /\btequila\b/i,
-  /\bmoney\b/i,
-  /\bcash\b/i,
-  /\bdollar(?:s)?\b/i,
-  /\bpay(?:ment)?\b/i,
-  /\bvenmo\b/i,
-  /\bzelle\b/i,
-  /\bcashapp\b/i,
-  /\bpaypal\b/i,
-  /\bbuy\s+drinks\b/i,
-  /\bwings\b/i,
-  /\bstrip\b/i,
-  /\bnude\b/i,
-  /\bfight\b/i,
-  /\bweapon\b/i,
+/**
+ * Screens custom forfeit text before create.
+ * Drinks, food, and honor-system money are allowed.
+ * Payment rails / deep links and dangerous terms are blocked.
+ */
+
+const PAYMENT_RAIL_PATTERNS: RegExp[] = [
+  /\b(stripe|paypal|square\s*cash|cash\s*app\s*pay|apple\s*pay|google\s*pay|zelle)\b/i,
+  /\b(venmo\.com|cash\.app|paypal\.me|zellepay\.com|stripe\.com)\b/i,
+  /https?:\/\/\S*(venmo|cash\.app|paypal|zelle|stripe)\S*/i,
+  /\b(oauth|checkout|escrow|wallet\s*link|payment\s*link)\b/i,
+];
+
+const DANGEROUS_PATTERNS: RegExp[] = [
+  /\b(kill|murder|suicide|self[\s-]?harm|rape|assault)\b/i,
+  /\b(punch|fight|beat\s+up|injure|hurt\s+(yourself|them))\b/i,
+  /\b(nude|naked|strip\s+down|sexual)\b/i,
 ];
 
 export const CUSTOM_FORFEIT_MAX_LENGTH = 80;
 
 export type ForfeitScreenResult =
   | { ok: true }
-  | { ok: false; reason: "too_long" | "empty" | "banned" };
+  | { ok: false; reason: "payment_rail" | "dangerous" | "empty" | "too_long" };
 
 /** Screen custom forfeit text before write. */
 export function screenCustomForfeit(text: string): ForfeitScreenResult {
@@ -40,10 +32,11 @@ export function screenCustomForfeit(text: string): ForfeitScreenResult {
   if (trimmed.length > CUSTOM_FORFEIT_MAX_LENGTH) {
     return { ok: false, reason: "too_long" };
   }
-  for (const pattern of BANNED_PATTERNS) {
-    if (pattern.test(trimmed)) {
-      return { ok: false, reason: "banned" };
-    }
+  if (PAYMENT_RAIL_PATTERNS.some((pattern) => pattern.test(trimmed))) {
+    return { ok: false, reason: "payment_rail" };
+  }
+  if (DANGEROUS_PATTERNS.some((pattern) => pattern.test(trimmed))) {
+    return { ok: false, reason: "dangerous" };
   }
   return { ok: true };
 }

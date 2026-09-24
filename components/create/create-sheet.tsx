@@ -12,6 +12,12 @@ import {
   type Pick,
 } from "@/lib/challenges/create";
 import { formatKickoff } from "@/lib/challenges/format";
+import {
+  FORFEIT_PRESET_CATEGORIES,
+  FORFEIT_PRESETS,
+  type ForfeitPreset,
+} from "@/lib/forfeit-presets";
+import { screenCustomForfeit } from "@/lib/forfeit-screen";
 
 type GameItem = {
   id: string;
@@ -45,6 +51,7 @@ type CreateSheetProps = {
 };
 
 type Step = "game" | "market" | "side" | "line" | "forfeit" | "preview";
+type ForfeitMode = "presets" | "custom" | "custom_money";
 
 const LAST_FORFEIT_KEY = "waygr-last-forfeit";
 
@@ -105,6 +112,9 @@ export function CreateSheet({
   const [quarter, setQuarter] = useState<number>(1);
   const [forfeitKind, setForfeitKind] = useState<ForfeitKind>("concession");
   const [forfeitText, setForfeitText] = useState("");
+  const [selectedPresetId, setSelectedPresetId] = useState<string | null>(null);
+  const [forfeitMode, setForfeitMode] = useState<ForfeitMode>("presets");
+  const [customMoney, setCustomMoney] = useState("");
   const [rematchOf, setRematchOf] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -114,6 +124,21 @@ export function CreateSheet({
     () => games.find((g) => g.id === gameId) ?? null,
     [games, gameId],
   );
+
+  const customScreenResult = useMemo(() => {
+    if (forfeitMode === "custom") {
+      return screenCustomForfeit(forfeitText);
+    }
+    if (forfeitMode === "custom_money") {
+      const amount = customMoney.trim();
+      if (!amount) {
+        return { ok: false as const, reason: "empty" as const };
+      }
+      const normalized = amount.startsWith("$") ? amount : `$${amount}`;
+      return screenCustomForfeit(normalized);
+    }
+    return { ok: true as const };
+  }, [forfeitMode, forfeitText, customMoney]);
 
   const loadGames = useCallback(async () => {
     setLoadingGames(true);
@@ -145,6 +170,9 @@ export function CreateSheet({
       setForfeitKind(prefill.forfeitKind ?? lastForfeit ?? "concession");
       setForfeitText(prefill.forfeitText ?? "");
       setRematchOf(prefill.rematchOf ?? null);
+      setForfeitMode("presets");
+      setSelectedPresetId(null);
+      setCustomMoney("");
       setStep(prefill.gameId ? "market" : "game");
       return;
     }
@@ -155,6 +183,7 @@ export function CreateSheet({
       setCreatorPick("home");
       setLine(defaultLine("spread"));
       setForfeitKind(lastForfeit ?? "concession");
+      setForfeitMode("presets");
       setStep("market");
       return;
     }
@@ -167,6 +196,9 @@ export function CreateSheet({
     setQuarter(1);
     setForfeitKind(lastForfeit ?? "concession");
     setForfeitText("");
+    setSelectedPresetId(null);
+    setForfeitMode("presets");
+    setCustomMoney("");
     setRematchOf(null);
   }, [open, prefill, quickGameId]);
 
@@ -204,8 +236,13 @@ export function CreateSheet({
     setStep("forfeit");
   }
 
-  async function handleCreate() {
+  async function handleCreate(overrides?: {
+    kind?: ForfeitKind;
+    text?: string;
+  }) {
     if (!gameId) return;
+    const kind = overrides?.kind ?? forfeitKind;
+    const text = overrides?.text ?? forfeitText;
     setSubmitting(true);
     setError(null);
 
@@ -213,7 +250,7 @@ export function CreateSheet({
       gameId,
       market,
       creatorPick,
-      forfeitKind,
+      forfeitKind: kind,
       rematchOf,
     };
     if (market === "spread" || market === "total") {
@@ -222,8 +259,8 @@ export function CreateSheet({
     if (market === "quarter_winner") {
       payload.quarter = quarter;
     }
-    if (forfeitKind === "custom") {
-      payload.forfeitText = forfeitText;
+    if (kind === "custom") {
+      payload.forfeitText = text;
     }
 
     const res = await fetch("/api/challenges", {
@@ -241,16 +278,48 @@ export function CreateSheet({
           : body.reason === "forfeit_screened"
             ? copy.screening.rejected
             : body.reason === "adult_required"
-              ? "Confirm you are 18+ first."
+              ? copy.auth.adultConfirmError
               : "Could not create. Try again.",
       );
       return;
     }
 
-    localStorage.setItem(LAST_FORFEIT_KEY, forfeitKind);
+    setForfeitKind(kind);
+    if (kind === "custom") {
+      setForfeitText(text);
+    }
+    localStorage.setItem(LAST_FORFEIT_KEY, kind);
     setCreatedSlug(body.slug);
     setStep("preview");
     onCreated?.(body.slug);
+  }
+
+  function selectPreset(preset: ForfeitPreset) {
+    setSelectedPresetId(preset.id);
+    setForfeitMode("presets");
+    setCustomMoney("");
+    setForfeitKind(preset.kind);
+    setForfeitText(preset.text ?? "");
+    if (preset.kind === "custom" && preset.text) {
+      void handleCreate({ kind: "custom", text: preset.text });
+      return;
+    }
+    void handleCreate({ kind: preset.kind, text: preset.text ?? "" });
+  }
+
+  function submitCustomForfeit() {
+    if (!customScreenResult.ok) {
+      return;
+    }
+    const text =
+      forfeitMode === "custom_money"
+        ? customMoney.trim().startsWith("$")
+          ? customMoney.trim()
+          : `$${customMoney.trim()}`
+        : forfeitText.trim();
+    setForfeitKind("custom");
+    setForfeitText(text);
+    void handleCreate({ kind: "custom", text });
   }
 
   async function handleShare() {
@@ -271,6 +340,9 @@ export function CreateSheet({
     }
     onClose();
   }
+
+  const showScreeningError =
+    !customScreenResult.ok && customScreenResult.reason !== "empty";
 
   if (!open) return null;
 
@@ -443,53 +515,114 @@ export function CreateSheet({
           )}
 
           {step === "forfeit" && (
-            <div className="space-y-3">
-              {(["concession", "jersey_swap", "custom"] as ForfeitKind[]).map((kind) => (
+            <div className="space-y-5">
+              <p className="text-sm text-[var(--muted)]">{copy.create.honorNote}</p>
+
+              {FORFEIT_PRESET_CATEGORIES.map((category) => {
+                const presets = FORFEIT_PRESETS.filter(
+                  (preset) => preset.category === category.id,
+                );
+                return (
+                  <section key={category.id}>
+                    <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-[var(--muted)]">
+                      {category.label}
+                    </h3>
+                    <div className="flex flex-wrap gap-2">
+                      {presets.map((preset) => {
+                        const selected =
+                          selectedPresetId === preset.id && forfeitMode === "presets";
+                        return (
+                          <button
+                            key={preset.id}
+                            type="button"
+                            disabled={submitting}
+                            onClick={() => selectPreset(preset)}
+                            className={`rounded-full border px-4 py-2 text-sm font-medium transition-colors disabled:opacity-50 ${
+                              selected
+                                ? "border-[var(--orange)] bg-[var(--orange)] text-[var(--on-accent)]"
+                                : "border-[var(--border)] bg-[var(--raised)] text-[var(--text)] hover:border-[var(--orange)]"
+                            }`}
+                          >
+                            {preset.label}
+                          </button>
+                        );
+                      })}
+                      {category.id === "money" ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setForfeitMode("custom_money");
+                            setSelectedPresetId(null);
+                          }}
+                          className={`rounded-full border px-4 py-2 text-sm font-medium transition-colors ${
+                            forfeitMode === "custom_money"
+                              ? "border-[var(--orange)] bg-[var(--orange)] text-[var(--on-accent)]"
+                              : "border-[var(--border)] bg-[var(--raised)] text-[var(--text)] hover:border-[var(--orange)]"
+                          }`}
+                        >
+                          {copy.create.customMoneyLabel}
+                        </button>
+                      ) : null}
+                    </div>
+                  </section>
+                );
+              })}
+
+              <div className="border-t border-[var(--border)] pt-4">
                 <button
-                  key={kind}
                   type="button"
                   onClick={() => {
-                    setForfeitKind(kind);
-                    if (kind !== "custom") {
-                      setStep("preview");
-                      void handleCreate();
-                    }
+                    setForfeitMode("custom");
+                    setSelectedPresetId(null);
                   }}
-                  className={`block w-full rounded-xl border px-4 py-3 text-left font-semibold ${
-                    forfeitKind === kind
-                      ? "border-[var(--orange)]"
-                      : "border-[var(--border)]"
+                  className={`mb-3 text-sm font-semibold ${
+                    forfeitMode === "custom"
+                      ? "text-[var(--orange-strong)]"
+                      : "text-[var(--muted)]"
                   }`}
                 >
-                  {copy.create.forfeits[kind]}
+                  {copy.create.forfeits.custom}
                 </button>
-              ))}
-              {forfeitKind === "custom" && (
-                <form
-                  className="space-y-3"
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    setStep("preview");
-                    void handleCreate();
-                  }}
-                >
+
+                {forfeitMode === "custom" ? (
                   <textarea
                     value={forfeitText}
                     onChange={(e) => setForfeitText(e.target.value)}
                     maxLength={80}
                     rows={3}
                     placeholder={copy.create.customPlaceholder}
-                    className="w-full rounded-xl border border-[var(--border)] bg-[var(--raised)] px-4 py-3"
+                    className="mb-3 w-full rounded-xl border border-[var(--border)] bg-[var(--raised)] px-4 py-3"
                   />
+                ) : null}
+
+                {forfeitMode === "custom_money" ? (
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    maxLength={12}
+                    value={customMoney}
+                    onChange={(e) => setCustomMoney(e.target.value)}
+                    placeholder={copy.create.customMoneyPlaceholder}
+                    className="mb-3 w-full rounded-xl border border-[var(--border)] bg-[var(--raised)] px-4 py-3 text-[var(--text)]"
+                  />
+                ) : null}
+
+                {showScreeningError ? (
+                  <p className="mb-3 text-sm text-[var(--rose)]" role="alert">
+                    {copy.screening.rejected}
+                  </p>
+                ) : null}
+
+                {forfeitMode === "custom" || forfeitMode === "custom_money" ? (
                   <Button
-                    type="submit"
                     className="w-full"
-                    disabled={!forfeitText.trim() || submitting}
+                    disabled={!customScreenResult.ok || submitting}
+                    onClick={() => submitCustomForfeit()}
                   >
                     {copy.create.next}
                   </Button>
-                </form>
-              )}
+                ) : null}
+              </div>
             </div>
           )}
 

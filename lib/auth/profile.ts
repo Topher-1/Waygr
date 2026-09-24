@@ -116,7 +116,7 @@ export async function ensureProfileForUser(user: {
   throw new Error("Failed to create profile after retries");
 }
 
-/** Mark 18+ confirmed — required before first create or accept. */
+/** Mark 21+ confirmed — required before first create or accept. */
 export async function confirmAdult(profileId: string): Promise<void> {
   const supabase = await createClient();
   const {
