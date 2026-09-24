@@ -1,0 +1,46 @@
+---
+description: Waygr project rules — read docs before any task
+alwaysApply: true
+---
+
+# Waygr
+
+Before starting any task, read `/docs` in this order:
+
+1. **`docs/BUILD-BRIEF.md`** — source of truth. If anything conflicts, BUILD wins.
+2. `docs/architecture.md` · `docs/patterns-brief.md` · `docs/prd.md`
+3. `docs/BRAND-BRIEF.md` · `docs/PRODUCT-BRIEF.md` · `docs/GROWTH-LOOP.md`
+
+## Locked decisions
+
+- Next.js **15** App Router, TypeScript, Tailwind, Serwist, Vercel
+- Supabase (Postgres, Auth, Realtime, Storage, Edge Functions, Cron) + Drizzle migrations
+- **Forfeits only** — no money, drinks, prizes, or payment links anywhere
+- First signed-in non-creator takes the other side; lock at kickoff
+- Leagues: NFL, NCAAF, NBA (NCAAB before March)
+- Score feed only; `ScoreProvider` interface; BALLDONTLIE first
+- `APP_NAME` in `lib/constants.ts`; every UI string in `lib/copy.ts`
+- Brand tokens in `styles/tokens.css` + `lib/theme.ts`; dark default
+
+## Non-goals (Phase 1)
+
+- Money in any form (payments, payment links, prizes, sportsbook odds)
+- Stranger matching or public challenge feed
+- Groups, rooms, leaderboards, counter-offers (Phase 2)
+- Native app, iMessage, Live Activities, widgets (Phase 3)
+- Importing contacts; Waygr sending texts or emails
+- Chat outside a challenge
+
+## Color and voice rules
+
+- Colors **only** from brand tokens — no off-palette hex in app source
+- Text on orange is always ink (`--on-accent`), never white
+- Orange = you / primary action (one per screen). Blue = their side only
+- No red for losing; rose is errors only
+- Say "call" and "challenge" — never bet, wager, odds, or payout in UI copy
+
+## Chris-only parks (do not block on these)
+
+- Challenge link domain
+- Apple Developer account
+- BALLDONTLIE tier after confirming live + period scores for NFL and NCAAF
