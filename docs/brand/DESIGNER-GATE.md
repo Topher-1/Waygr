@@ -26,3 +26,7 @@ Direction: `docs/BRAND-BRIEF.md` + `docs/waygr-brand-preview.png`. Tokens + craf
 ## Cursor apply
 
 Wire icons + OG / share cards from this pack in the Slice 6 CA. Do not invent a second palette or redraw the W.
+
+## QR B1 fix (2026-09-24)
+
+Link preview: **You = orange `#FF5F1F`** (ink letter); **them/challenger = rival blue `#4D8DFF`**. Regenerated `template-link-preview-1200x630.svg` + `.png`.
