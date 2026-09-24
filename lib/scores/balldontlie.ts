@@ -5,12 +5,13 @@ const PROVIDER = 'balldontlie';
 const BASE_URL = 'https://api.balldontlie.io';
 const MAX_LIST_GAMES_DAYS = 14;
 
-/** Football seasons start in September; basketball in October (NBA) or November (NCAAB). */
+/** Football seasons start in September; basketball in October (NBA) or November (NCAAB); MLB in March. */
 const SEASON_START_MONTH: Record<League, number> = {
   nfl: 8,
   ncaaf: 8,
   nba: 9,
   ncaab: 10,
+  mlb: 2,
 };
 
 const LEAGUE_PATH: Record<League, string> = {
@@ -18,10 +19,16 @@ const LEAGUE_PATH: Record<League, string> = {
   ncaaf: 'ncaaf',
   nba: 'nba',
   ncaab: 'ncaab',
+  mlb: 'mlb',
 };
 
 type BdlTeam = {
   abbreviation: string;
+};
+
+type BdlInningData = {
+  runs?: number | null;
+  inning_scores?: number[];
 };
 
 type BdlGame = {
@@ -30,9 +37,12 @@ type BdlGame = {
   status: string | null;
   status_state: string;
   home_team: BdlTeam;
-  visitor_team: BdlTeam;
-  home_team_score: number | null;
-  visitor_team_score: number | null;
+  visitor_team?: BdlTeam;
+  away_team?: BdlTeam;
+  home_team_score?: number | null;
+  visitor_team_score?: number | null;
+  home_team_data?: BdlInningData;
+  away_team_data?: BdlInningData;
   home_team_q1?: number | null;
   home_team_q2?: number | null;
   home_team_q3?: number | null;
@@ -45,10 +55,27 @@ type BdlGame = {
   visitor_team_ot?: number | null;
   period?: number | null;
   time?: string | null;
+  display_clock?: string | null;
 };
 
 function teamCode(league: League, abbr: string): string {
   return `${league}:${abbr}`;
+}
+
+function awayTeamAbbr(game: BdlGame): string {
+  return (game.visitor_team ?? game.away_team)?.abbreviation ?? 'UNK';
+}
+
+function readHomeScore(game: BdlGame): number {
+  return game.home_team_score ?? game.home_team_data?.runs ?? 0;
+}
+
+function readAwayScore(game: BdlGame): number {
+  return game.visitor_team_score ?? game.away_team_data?.runs ?? 0;
+}
+
+function readClock(game: BdlGame): string | null {
+  return game.display_clock ?? game.time ?? null;
 }
 
 function mapStatus(statusState: string): GameStatus {
@@ -89,6 +116,30 @@ function quarterFields(game: BdlGame): { home: (number | null)[]; away: (number 
       game.visitor_team_ot ?? null,
     ],
   };
+}
+
+function inningFields(game: BdlGame): { home: (number | null)[]; away: (number | null)[] } {
+  const homeInnings = game.home_team_data?.inning_scores ?? [];
+  const awayInnings = game.away_team_data?.inning_scores ?? [];
+  const len = Math.max(homeInnings.length, awayInnings.length);
+  const home: (number | null)[] = [];
+  const away: (number | null)[] = [];
+  for (let i = 0; i < len; i++) {
+    const h = homeInnings[i];
+    const a = awayInnings[i];
+    if (h !== undefined && a !== undefined) {
+      home.push(h);
+      away.push(a);
+    }
+  }
+  return { home, away };
+}
+
+function periodFields(game: BdlGame): { home: (number | null)[]; away: (number | null)[] } {
+  if (game.home_team_data?.inning_scores || game.away_team_data?.inning_scores) {
+    return inningFields(game);
+  }
+  return quarterFields(game);
 }
 
 function buildPeriodScores(homeQ: (number | null)[], awayQ: (number | null)[]): PeriodScore[] {
@@ -142,22 +193,23 @@ export function derivePeriod(
 }
 
 function mapGame(league: League, game: BdlGame): GameUpsert {
-  const { home, away } = quarterFields(game);
+  const { home, away } = periodFields(game);
   const periodScores = buildPeriodScores(home, away);
   const status = mapStatus(game.status_state);
-  const period = derivePeriod(game.status, game.status_state, periodScores);
+  const period =
+    game.period ?? derivePeriod(game.status, game.status_state, periodScores);
 
   return {
     providerGameId: String(game.id),
     league,
     homeTeamCode: teamCode(league, game.home_team.abbreviation),
-    awayTeamCode: teamCode(league, game.visitor_team.abbreviation),
+    awayTeamCode: teamCode(league, awayTeamAbbr(game)),
     startsAt: new Date(game.date),
     status,
     period,
-    clock: game.time ?? null,
-    homeScore: game.home_team_score ?? 0,
-    awayScore: game.visitor_team_score ?? 0,
+    clock: readClock(game),
+    homeScore: readHomeScore(game),
+    awayScore: readAwayScore(game),
     periodScores,
   };
 }
@@ -193,25 +245,30 @@ export function buildListGamesQuery(
   from: Date,
   to: Date,
 ): { seasons: string[]; dates: string[] } {
+  const seasons = new Set([
+    String(deriveSeasonYear(from, league)),
+    String(deriveSeasonYear(to, league)),
+  ]);
   return {
-    seasons: [String(deriveSeasonYear(from, league))],
+    seasons: [...seasons].sort(),
     dates: enumerateDateRange(from, to),
   };
 }
 
 function mapUpdate(game: BdlGame): GameUpdate {
-  const { home, away } = quarterFields(game);
+  const { home, away } = periodFields(game);
   const periodScores = buildPeriodScores(home, away);
   const status = mapStatus(game.status_state);
-  const period = derivePeriod(game.status, game.status_state, periodScores);
+  const period =
+    game.period ?? derivePeriod(game.status, game.status_state, periodScores);
 
   return {
     providerGameId: String(game.id),
     status,
     period,
-    clock: game.time ?? null,
-    homeScore: game.home_team_score ?? 0,
-    awayScore: game.visitor_team_score ?? 0,
+    clock: readClock(game),
+    homeScore: readHomeScore(game),
+    awayScore: readAwayScore(game),
     periodScores,
   };
 }

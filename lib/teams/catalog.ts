@@ -30,6 +30,12 @@ const TEAM_NAMES: Record<string, string> = {
   "nba:BOS": "Celtics",
   "nba:GSW": "Warriors",
   "nba:NYK": "Knicks",
+  "mlb:NYY": "Yankees",
+  "mlb:LAD": "Dodgers",
+  "mlb:BOS": "Red Sox",
+  "mlb:CHC": "Cubs",
+  "mlb:ATL": "Braves",
+  "mlb:HOU": "Astros",
 };
 
 const TOKEN_PAIRS = [

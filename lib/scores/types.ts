@@ -1,6 +1,6 @@
 import type { GameStatus } from '@/lib/settle';
 
-export type League = 'nfl' | 'ncaaf' | 'nba' | 'ncaab';
+export type League = 'nfl' | 'ncaaf' | 'nba' | 'ncaab' | 'mlb';
 
 export type PeriodScore = { period: number; home: number; away: number };
 

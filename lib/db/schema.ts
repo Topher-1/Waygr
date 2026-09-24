@@ -18,7 +18,7 @@ import {
 import { sql } from "drizzle-orm";
 import { authUsers } from "@/lib/db/auth";
 
-export const leagueEnum = pgEnum("league", ["nfl", "ncaaf", "nba", "ncaab"]);
+export const leagueEnum = pgEnum("league", ["nfl", "ncaaf", "nba", "ncaab", "mlb"]);
 export const gameStatusEnum = pgEnum("game_status", [
   "scheduled",
   "live",

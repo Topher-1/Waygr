@@ -43,6 +43,13 @@
       "when": 1727203700000,
       "tag": "0005_accept_challenge_atomic_kickoff_where",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1727203800000,
+      "tag": "0006_add_mlb_league",
+      "breakpoints": true
     }
   ]
 }

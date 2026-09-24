@@ -4,7 +4,7 @@ export type Outcome = 'creator' | 'opponent' | 'push';
 export type GameStatus = 'scheduled' | 'live' | 'final' | 'postponed' | 'suspended' | 'canceled';
 
 export interface Game {
-  league: 'nfl' | 'ncaaf' | 'nba' | 'ncaab';
+  league: 'nfl' | 'ncaaf' | 'nba' | 'ncaab' | 'mlb';
   status: GameStatus;
   period: number | null; // current period; for a final game, the last period played
   homeScore: number;
