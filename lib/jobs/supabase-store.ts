@@ -3,11 +3,10 @@ import type { PollScoresStore } from '@/lib/jobs/poll-scores';
 import type { SettleStore } from '@/lib/jobs/settle';
 import type { SweepStore } from '@/lib/jobs/sweep';
 import type {
+  AtomicSettleParams,
+  AtomicSettleResult,
   ChallengeRow,
-  ForfeitRow,
   GameRow,
-  NotificationRow,
-  ProfileRow,
 } from '@/lib/jobs/types';
 
 type DbGame = {
@@ -133,17 +132,22 @@ export class SupabaseJobStore implements PollScoresStore, SettleStore, SweepStor
   }
 
   async listLeaguesWithActiveChallenges(): Promise<string[]> {
-    const { data, error } = await this.supabase
+    const { data: challenges, error: challengeError } = await this.supabase
       .from('challenges')
-      .select('games!inner(league)')
+      .select('game_id')
       .in('state', ['open', 'accepted', 'live']);
-    if (error) throw error;
-    const leagues = new Set<string>();
-    for (const row of data ?? []) {
-      const game = row.games as { league: string };
-      leagues.add(game.league);
-    }
-    return [...leagues];
+    if (challengeError) throw challengeError;
+
+    const gameIds = [...new Set((challenges ?? []).map((r) => r.game_id as string))];
+    if (gameIds.length === 0) return [];
+
+    const { data: games, error: gameError } = await this.supabase
+      .from('games')
+      .select('league')
+      .in('id', gameIds);
+    if (gameError) throw gameError;
+
+    return [...new Set((games ?? []).map((g) => g.league as string))];
   }
 
   async upsertScheduleGames(games: GameRow[]): Promise<void> {
@@ -218,123 +222,68 @@ export class SupabaseJobStore implements PollScoresStore, SettleStore, SweepStor
     return data ? mapGame(data as DbGame) : undefined;
   }
 
-  async listChallengesForGame(gameId: string, states: string[]): Promise<ChallengeRow[]> {
-    const { data, error } = await this.supabase
+  async listChallengesForSettlement(gameId: string): Promise<ChallengeRow[]> {
+    const { data: active, error: activeError } = await this.supabase
       .from('challenges')
       .select('*')
       .eq('game_id', gameId)
-      .in('state', states);
-    if (error) throw error;
-    return (data as DbChallenge[]).map(mapChallenge);
+      .in('state', ['accepted', 'live']);
+    if (activeError) throw activeError;
+
+    const { data: settled, error: settledError } = await this.supabase
+      .from('challenges')
+      .select('*')
+      .eq('game_id', gameId)
+      .eq('state', 'settled')
+      .neq('outcome', 'push');
+    if (settledError) throw settledError;
+
+    const settledRows = (settled as DbChallenge[]) ?? [];
+    const needsRepair: ChallengeRow[] = [];
+
+    for (const row of settledRows) {
+      const { data: forfeit, error: forfeitError } = await this.supabase
+        .from('forfeits')
+        .select('id')
+        .eq('challenge_id', row.id)
+        .maybeSingle();
+      if (forfeitError) throw forfeitError;
+      if (!forfeit) needsRepair.push(mapChallenge(row));
+    }
+
+    return [...(active as DbChallenge[]).map(mapChallenge), ...needsRepair];
   }
 
-  async updateChallenge(
-    id: string,
-    patch: Partial<ChallengeRow>,
-    onlyIfStateIn: string[],
-  ): Promise<ChallengeRow | null> {
-    const update: Record<string, unknown> = {};
-    if (patch.state) update.state = patch.state;
-    if (patch.outcome !== undefined) update.outcome = patch.outcome;
-    if (patch.settledAt !== undefined) update.settled_at = patch.settledAt;
-
+  async moveChallengeToLive(challengeId: string): Promise<boolean> {
     const { data, error } = await this.supabase
       .from('challenges')
-      .update(update)
-      .eq('id', id)
-      .in('state', onlyIfStateIn)
-      .select('*')
+      .update({ state: 'live' })
+      .eq('id', challengeId)
+      .eq('state', 'accepted')
+      .select('id')
       .maybeSingle();
     if (error) throw error;
-    return data ? mapChallenge(data as DbChallenge) : null;
+    return Boolean(data);
   }
 
-  async getForfeitByChallenge(challengeId: string): Promise<ForfeitRow | undefined> {
-    const { data, error } = await this.supabase
-      .from('forfeits')
-      .select('*')
-      .eq('challenge_id', challengeId)
-      .maybeSingle();
+  async settleChallengeAtomic(params: AtomicSettleParams): Promise<AtomicSettleResult> {
+    const { data, error } = await this.supabase.rpc('settle_challenge_atomic', {
+      p_challenge_id: params.challengeId,
+      p_outcome: params.outcome,
+      p_settled_at: params.settledAt,
+      p_owed_by: params.owedBy,
+      p_owed_to: params.owedTo,
+      p_forfeit_kind: params.forfeitKind,
+      p_jersey_team: params.jerseyTeam,
+      p_jersey_until: params.jerseyUntil,
+    });
     if (error) throw error;
-    if (!data) return undefined;
+
+    const payload = data as { settled: boolean; repaired: boolean; notifications: number };
     return {
-      id: data.id,
-      challengeId: data.challenge_id,
-      owedBy: data.owed_by,
-      owedTo: data.owed_to,
-      kind: data.kind,
-      status: data.status,
-      dueAt: data.due_at,
-      paidAt: data.paid_at,
-    };
-  }
-
-  async insertForfeit(row: Omit<ForfeitRow, 'id'>): Promise<ForfeitRow> {
-    const { data, error } = await this.supabase
-      .from('forfeits')
-      .insert({
-        challenge_id: row.challengeId,
-        owed_by: row.owedBy,
-        owed_to: row.owedTo,
-        kind: row.kind,
-        status: row.status,
-        due_at: row.dueAt,
-        paid_at: row.paidAt,
-      })
-      .select('*')
-      .single();
-    if (error) throw error;
-    return {
-      id: data.id,
-      challengeId: data.challenge_id,
-      owedBy: data.owed_by,
-      owedTo: data.owed_to,
-      kind: data.kind,
-      status: data.status,
-      dueAt: data.due_at,
-      paidAt: data.paid_at,
-    };
-  }
-
-  async insertNotification(row: Omit<NotificationRow, 'sentAt'>): Promise<NotificationRow | null> {
-    const { data, error } = await this.supabase
-      .from('notifications_sent')
-      .insert({
-        user_id: row.userId,
-        kind: row.kind,
-        ref_id: row.refId,
-      })
-      .select('*')
-      .maybeSingle();
-    if (error) {
-      if (error.code === '23505') return null;
-      throw error;
-    }
-    return data
-      ? { userId: data.user_id, kind: data.kind, refId: data.ref_id, sentAt: data.sent_at }
-      : null;
-  }
-
-  async updateProfile(id: string, patch: Partial<ProfileRow>): Promise<void> {
-    const update: Record<string, unknown> = {};
-    if (patch.jerseyTeam !== undefined) update.jersey_team = patch.jerseyTeam;
-    if (patch.jerseyUntil !== undefined) update.jersey_until = patch.jerseyUntil;
-    const { error } = await this.supabase.from('profiles').update(update).eq('id', id);
-    if (error) throw error;
-  }
-
-  async getProfile(id: string): Promise<ProfileRow | undefined> {
-    const { data, error } = await this.supabase
-      .from('profiles')
-      .select('id, jersey_team, jersey_until')
-      .eq('id', id)
-      .maybeSingle();
-    if (error) throw error;
-    if (!data) return undefined;
-    return {
-      id: data.id,
-      jerseyTeam: data.jersey_team,
-      jerseyUntil: data.jersey_until,
+      settled: Boolean(payload?.settled),
+      repaired: Boolean(payload?.repaired),
+      notificationsQueued: payload?.notifications ?? 0,
     };
   }
 
@@ -349,26 +298,37 @@ export class SupabaseJobStore implements PollScoresStore, SettleStore, SweepStor
   }
 
   async listOpenChallengesPastKickoff(now: Date): Promise<ChallengeRow[]> {
-    const { data, error } = await this.supabase
+    const { data: open, error: openError } = await this.supabase
       .from('challenges')
-      .select('*, games!inner(starts_at)')
-      .eq('state', 'open')
-      .lte('games.starts_at', now.toISOString());
-    if (error) throw error;
-    return (data as DbChallenge[]).map(mapChallenge);
+      .select('*')
+      .eq('state', 'open');
+    if (openError) throw openError;
+
+    const rows: ChallengeRow[] = [];
+    for (const row of (open as DbChallenge[]) ?? []) {
+      const game = await this.getGame(row.game_id);
+      if (game && new Date(game.startsAt) <= now) {
+        rows.push(mapChallenge(row));
+      }
+    }
+    return rows;
   }
 
   async listChallengesOnVoidGames(): Promise<{ challenge: ChallengeRow; game: GameRow }[]> {
-    const { data, error } = await this.supabase
+    const { data: challenges, error: challengeError } = await this.supabase
       .from('challenges')
-      .select('*, games!inner(*)')
-      .in('state', ['accepted', 'live'])
-      .in('games.status', ['postponed', 'canceled']);
-    if (error) throw error;
-    return (data ?? []).map((row) => ({
-      challenge: mapChallenge(row as DbChallenge),
-      game: mapGame((row as { games: DbGame }).games),
-    }));
+      .select('*')
+      .in('state', ['accepted', 'live']);
+    if (challengeError) throw challengeError;
+
+    const rows: { challenge: ChallengeRow; game: GameRow }[] = [];
+    for (const row of (challenges as DbChallenge[]) ?? []) {
+      const game = await this.getGame(row.game_id);
+      if (game && (game.status === 'postponed' || game.status === 'canceled')) {
+        rows.push({ challenge: mapChallenge(row), game });
+      }
+    }
+    return rows;
   }
 
   async listProofsPendingAutoConfirm(): Promise<{ forfeitId: string; submittedAt: string }[]> {

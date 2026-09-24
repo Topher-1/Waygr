@@ -57,7 +57,7 @@ npm run dev
 | `VAPID_PRIVATE_KEY` | Step 7 | Web push |
 | `SCORE_PROVIDER` | Step 2 | `balldontlie` (default) |
 | `BALLDONTLIE_API_KEY` | Step 2 | Score feed (tests use fixtures; no live key required) |
-| `CRON_SECRET` | Step 2 | Optional shared secret for Edge Function cron calls |
+| `CRON_SECRET` | Step 2 | **Required** — Edge Function cron auth; requests rejected if unset |
 | `NEXT_PUBLIC_POSTHOG_KEY` | Step 7 | Analytics |
 | `NEXT_PUBLIC_POSTHOG_HOST` | Step 7 | Analytics host |
 
@@ -66,9 +66,10 @@ npm run dev
 1. Create dev and prod Supabase projects.
 2. Enable Auth providers: Apple, Google, phone (Step 3).
 3. Run migrations: `npm run db:migrate` (or apply `drizzle/*.sql` via Supabase SQL editor).
-4. Apply Step 2 migration: `drizzle/0002_job_meta_and_proof_submitted.sql`
-5. Deploy Edge Functions: `poll-scores`, `settle`, `sweep`
-6. Configure Supabase Cron (Dashboard → Integrations → Cron):
+4. Apply Step 2 migrations: `drizzle/0002_job_meta_and_proof_submitted.sql`, `drizzle/0003_settle_atomic_rpc.sql`
+5. Set `CRON_SECRET` in Supabase Edge Function secrets (required — jobs reject requests without a matching `x-cron-secret` header)
+6. Deploy Edge Functions: `poll-scores`, `settle`, `sweep` (`verify_jwt = false`; auth is `CRON_SECRET` only)
+7. Configure Supabase Cron (Dashboard → Integrations → Cron) with header `x-cron-secret: <CRON_SECRET>`:
    - `poll-scores` — `*/30 * * * * *` (every 30 s) → POST `/functions/v1/poll-scores`
    - `sweep` — `*/1 * * * *` (every 1 m) → POST `/functions/v1/sweep`
    - `settle` is invoked by `poll-scores` after games change (also callable directly)

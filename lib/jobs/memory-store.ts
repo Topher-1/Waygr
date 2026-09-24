@@ -2,12 +2,16 @@ import type { PollScoresStore } from '@/lib/jobs/poll-scores';
 import type { SettleStore } from '@/lib/jobs/settle';
 import type { SweepStore } from '@/lib/jobs/sweep';
 import type {
+  AtomicSettleParams,
+  AtomicSettleResult,
   ChallengeRow,
   ForfeitRow,
   GameRow,
   NotificationRow,
   ProfileRow,
 } from '@/lib/jobs/types';
+
+const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 
 export class MemoryStore implements PollScoresStore, SettleStore, SweepStore {
   games = new Map<string, GameRow>();
@@ -19,6 +23,8 @@ export class MemoryStore implements PollScoresStore, SettleStore, SweepStore {
   profiles = new Map<string, ProfileRow>();
   teamAbbrs = new Map<string, string>();
   proofSubmittedAt = new Map<string, string>();
+  /** Test hook: when true, settleChallengeAtomic throws before any writes. */
+  atomicFailBeforeCommit = false;
   private currentTime: Date;
   private lastScheduleRefresh: Date | null = null;
 
@@ -142,44 +148,116 @@ export class MemoryStore implements PollScoresStore, SettleStore, SweepStore {
     return this.games.get(id);
   }
 
-  async listChallengesForGame(gameId: string, states: string[]): Promise<ChallengeRow[]> {
-    return [...this.challenges.values()].filter(
-      (c) => c.gameId === gameId && states.includes(c.state),
-    );
+  async listChallengesForSettlement(gameId: string): Promise<ChallengeRow[]> {
+    return [...this.challenges.values()].filter((c) => {
+      if (c.gameId !== gameId) return false;
+      if (c.state === 'accepted' || c.state === 'live') return true;
+      if (
+        c.state === 'settled' &&
+        c.outcome &&
+        c.outcome !== 'push' &&
+        !this.forfeitsByChallenge.has(c.id)
+      ) {
+        return true;
+      }
+      return false;
+    });
   }
 
-  async updateChallenge(
-    id: string,
-    patch: Partial<ChallengeRow>,
-    onlyIfStateIn: string[],
-  ): Promise<ChallengeRow | null> {
-    const row = this.challenges.get(id);
-    if (!row || !onlyIfStateIn.includes(row.state)) return null;
-    const updated = { ...row, ...patch };
-    this.challenges.set(id, updated);
-    return updated;
+  async moveChallengeToLive(challengeId: string): Promise<boolean> {
+    const row = this.challenges.get(challengeId);
+    if (!row || row.state !== 'accepted') return false;
+    this.challenges.set(challengeId, { ...row, state: 'live' });
+    return true;
   }
 
-  async getForfeitByChallenge(challengeId: string): Promise<ForfeitRow | undefined> {
-    return this.forfeitsByChallenge.get(challengeId);
-  }
+  async settleChallengeAtomic(params: AtomicSettleParams): Promise<AtomicSettleResult> {
+    const challenge = this.challenges.get(params.challengeId);
+    if (!challenge) {
+      return { settled: false, repaired: false, notificationsQueued: 0 };
+    }
 
-  async insertForfeit(row: Omit<ForfeitRow, 'id'>): Promise<ForfeitRow> {
-    const forfeit: ForfeitRow = { ...row, id: crypto.randomUUID() };
-    this.forfeits.set(forfeit.id, forfeit);
-    this.forfeitsByChallenge.set(forfeit.challengeId, forfeit);
-    return forfeit;
-  }
+    if (this.atomicFailBeforeCommit) {
+      throw new Error('simulated crash before commit');
+    }
 
-  async insertNotification(row: Omit<NotificationRow, 'sentAt'>): Promise<NotificationRow | null> {
-    const key = `${row.userId}:${row.kind}:${row.refId}`;
-    if (this.notifications.has(key)) return null;
-    const notification: NotificationRow = {
-      ...row,
-      sentAt: this.currentTime.toISOString(),
+    let newlySettled = false;
+    let repaired = false;
+
+    if (challenge.state === 'accepted' || challenge.state === 'live') {
+      this.challenges.set(params.challengeId, {
+        ...challenge,
+        state: 'settled',
+        outcome: params.outcome,
+        settledAt: params.settledAt,
+      });
+      newlySettled = true;
+    } else if (challenge.state === 'settled') {
+      if (challenge.outcome !== params.outcome) {
+        return { settled: false, repaired: false, notificationsQueued: 0 };
+      }
+      repaired = true;
+    } else {
+      return { settled: false, repaired: false, notificationsQueued: 0 };
+    }
+
+    if (
+      params.outcome !== 'push' &&
+      params.owedBy &&
+      params.owedTo &&
+      params.forfeitKind &&
+      !this.forfeitsByChallenge.has(params.challengeId)
+    ) {
+      const dueAt =
+        params.jerseyUntil ??
+        new Date(new Date(params.settledAt).getTime() + SEVEN_DAYS_MS).toISOString();
+      const isJersey = params.forfeitKind === 'jersey_swap';
+      const forfeit: ForfeitRow = {
+        id: crypto.randomUUID(),
+        challengeId: params.challengeId,
+        owedBy: params.owedBy,
+        owedTo: params.owedTo,
+        kind: params.forfeitKind,
+        status: isJersey ? 'paid' : 'owed',
+        dueAt,
+        paidAt: isJersey ? params.settledAt : null,
+      };
+      this.forfeits.set(forfeit.id, forfeit);
+      this.forfeitsByChallenge.set(forfeit.challengeId, forfeit);
+
+      if (isJersey && params.jerseyTeam) {
+        const profile = this.profiles.get(params.owedBy) ?? {
+          id: params.owedBy,
+          jerseyTeam: null,
+          jerseyUntil: null,
+        };
+        this.profiles.set(params.owedBy, {
+          ...profile,
+          jerseyTeam: params.jerseyTeam,
+          jerseyUntil: dueAt,
+        });
+      }
+    }
+
+    let notificationsQueued = 0;
+    for (const userId of [challenge.creatorId, challenge.opponentId].filter(Boolean) as string[]) {
+      const key = `${userId}:settled:${params.challengeId}`;
+      if (!this.notifications.has(key)) {
+        this.notifications.set(key, {
+          userId,
+          kind: 'settled',
+          refId: params.challengeId,
+          sentAt: this.currentTime.toISOString(),
+        });
+        notificationsQueued++;
+      }
+    }
+
+    return {
+      settled: newlySettled || repaired,
+      repaired: repaired && !newlySettled,
+      notificationsQueued,
     };
-    this.notifications.set(key, notification);
-    return notification;
   }
 
   async updateProfile(id: string, patch: Partial<ProfileRow>): Promise<void> {

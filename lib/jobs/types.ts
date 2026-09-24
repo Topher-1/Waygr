@@ -89,3 +89,20 @@ export interface SweepResult {
   proofsConfirmed: number;
   jerseysEnded: number;
 }
+
+export interface AtomicSettleParams {
+  challengeId: string;
+  outcome: Outcome;
+  settledAt: string;
+  owedBy: string | null;
+  owedTo: string | null;
+  forfeitKind: ForfeitKind | null;
+  jerseyTeam: string | null;
+  jerseyUntil: string | null;
+}
+
+export interface AtomicSettleResult {
+  settled: boolean;
+  repaired: boolean;
+  notificationsQueued: number;
+}

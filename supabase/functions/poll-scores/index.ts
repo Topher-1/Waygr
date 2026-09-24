@@ -34,9 +34,7 @@ Deno.serve(async (req) => {
         headers: {
           Authorization: `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
           'Content-Type': 'application/json',
-          ...(Deno.env.get('CRON_SECRET')
-            ? { 'x-cron-secret': Deno.env.get('CRON_SECRET')! }
-            : {}),
+          'x-cron-secret': Deno.env.get('CRON_SECRET')!,
         },
         body: JSON.stringify({ gameIds: result.updatedGameIds }),
       });

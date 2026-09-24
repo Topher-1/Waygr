@@ -1,8 +1,7 @@
+import { assertCronSecret as assertCronSecretBase } from '../../../lib/jobs/cron-auth.ts';
+
 export function assertCronSecret(req: Request): void {
-  const expected = Deno.env.get('CRON_SECRET');
-  if (!expected) return;
-  const provided = req.headers.get('x-cron-secret');
-  if (provided !== expected) {
-    throw new Error('Unauthorized');
-  }
+  assertCronSecretBase(req, {
+    get: (key) => Deno.env.get(key),
+  });
 }
