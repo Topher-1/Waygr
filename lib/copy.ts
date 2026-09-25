@@ -68,6 +68,14 @@ export const copy = {
       "Winner calls it. Loser pays the forfeit.",
     ] as const,
     browseSlate: "Browse tonight's slate",
+    cancelCall: "Cancel call",
+    cancelCallTitle: "Cancel this call?",
+    cancelCallBody:
+      "Your share link will stop working — nobody else can accept.",
+    cancelCallConfirm: "Yes, cancel call",
+    cancelCallKeep: "Keep waiting",
+    cancelCallWorking: "Canceling…",
+    cancelCallError: "Could not cancel. Try again.",
   },
 
   create: {
@@ -96,7 +104,7 @@ export const copy = {
     customPlaceholder: "What does the loser owe?",
     customMoneyLabel: "Custom $",
     customMoneyPlaceholder: "Custom amount (e.g. $15)",
-    cancelChallenge: "Cancel challenge",
+    cancelChallenge: "Cancel call",
   },
 
   auth: {
