@@ -103,12 +103,15 @@ Order confirmed identical to BUILD-BRIEF “Prompt to paste” and HANDOFF steps
 ### Slice 6 — Forfeits + cards + Profile + Rivalry
 
 **Build:** Forfeits (concession share, jersey frame, custom proof), result cards, Profile, Rivalry. **Designer assets CLEAR** (`docs/brand/`, 2026-09-24). Was blocked on Designer assets.  
+**Chris locks (2026-09-24 via Argos — already Slice 6 / BUILD surfaces; no new screens):** (1) find past waygrs after settle; (2) both parties confirm forfeit completed (honor system; no Venmo/rails). UI noun = **waygr**; shipping copy avoids bet / odds / wager until counsel.  
 **Merge when:**
 
-- Concession card opens native share sheet with image on iOS/Android and marks forfeit paid when sharing completes; desktop → download.
-- Jersey frame shows on loser’s avatar for 7 days, then disappears.
-- Custom proof uploads; winner confirm/reject; auto-confirm after 72 hours.
+- Concession card opens native share sheet with image on iOS/Android; desktop → download. (BUILD · Screens / Acceptance.)
+- Jersey frame shows on loser’s avatar for 7 days, then disappears; jersey-swap remains auto-`paid` on settle (BUILD · Settlement).
+- **Honor-system paid/done (Chris):** forfeit reaches `paid` only when loser marks done **and** winner confirms — custom uses existing proof → confirm/reject (auto-confirm 72h); concession / other honor paths use loser `POST /api/forfeits/[id]/paid` (or share-as-loser-mark) then winner confirm/reject (same 72h auto-confirm). No payment rails, deep links, or escrow (Non-goals).
 - Custom forfeit screening allows drinks and honor-system money; blocks payment rails and dangerous terms.
+- **Settled history (Chris):** Profile (and/or Home — BUILD Home/Profile only) lists the signed-in user’s settled waygrs (owed and paid), each linking to `/c/[slug]`; settled stay findable after forfeit is `paid`. Rivalry continues to list every head-to-head challenge newest first (BUILD · Screens). No new routes.
+- Shipping UI strings use **waygr** / forfeit / call — never the whole words bet, wager, odds, or payout (`lib/copy.ts` banned-words test still red-fails the build).
 - axe: no serious/critical on Challenge, Home, Create in both themes; layouts hold at 200% text size (with Profile/Rivalry as shipped).
 
 ### Slice 7 — PWA + push + analytics
@@ -138,7 +141,7 @@ Order confirmed identical to BUILD-BRIEF “Prompt to paste” and HANDOFF steps
 After each Cursor PR:
 
 1. Builder lists which BUILD acceptance criteria now pass (this table).
-2. Fail-closed if Non-goals leak (money, groups/rooms, native, contact spam) or Locked decisions drift.
+2. Fail-closed if Non-goals leak (payment rails / Venmo linking / escrow, groups/rooms, native, contact spam) or Locked decisions drift; honor-system money marks stay in-app only.
 3. Argos merges only after that gate (and QR when Argos assigns).
 4. One CloudAgent / one step at a time; resume same PR on fail-closed (fleet caps).
 

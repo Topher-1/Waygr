@@ -405,17 +405,21 @@ POST /api/challenges/[id]/cancel                 Creator only, while open
 POST /api/challenges/[id]/rematch                forfeit onto the next game of
                                                  either team; prefilled, still editable
 
-                                                 Concession: called after the share
+                                                 Loser marks honor-system done (concession
 POST /api/forfeits/[id]/paid
-                                                 sheet resolves
+                                                 share may count as this mark). Not final
+                                                 paid alone — winner still confirms.
 
                                                  Custom: upload to Storage, status
 POST /api/forfeits/[id]/proof
                                                  becomes proof_submitted
 
-                                                 Winner confirms or rejects proof.
+                                                 Winner confirms or rejects (proof or loser
 POST /api/forfeits/[id]/confirm and /reject
-                                                 Auto-confirms after 72 hours
+                                                 mark-paid). Auto-confirms after 72 hours.
+                                                 Status becomes paid only after confirm (or
+                                                 auto-confirm). Jersey-swap stays auto-paid
+                                                 on settle.
 
                                                  Games for the create flow, next 7
 GET /api/games?league=&from=&to=
@@ -606,7 +610,8 @@ every step (spread, the favorite, the last forfeit used), so a fast user just ta
 
                                 Avatar with jersey frame if active, record (W-L-P), forfeit paid
  Profile        /u/[handle]
-                                rate, "Owes N," top rivalries
+                                rate, "Owes N," top rivalries, settled waygrs (owed + paid)
+                                linking to /c/[slug] so past waygrs stay findable
 
                                 Head-to-head record and every challenge between the two
  Rivalry        /r/[handle]
@@ -758,18 +763,27 @@ Non-goals for Phase 1
   The live page updates score and meter within 60 s without a refresh; a trash-talk
   message shows for the other person within 2 s.
 
-  The concession card opens the native share sheet with the image on iOS and Android
-  and marks the forfeit paid when sharing completes; desktop falls back to a download.
+  The concession card opens the native share sheet with the image on iOS and Android;
+  desktop falls back to a download.
 
-  The jersey frame shows on the loser's avatar for 7 days, then disappears.
+  The jersey frame shows on the loser's avatar for 7 days, then disappears. Jersey-swap
+  forfeits are marked paid immediately on settle (unchanged).
 
-  Custom proof uploads, the winner can confirm or reject, and it auto-confirms after 72
-  hours.
+  Honor-system completion (Chris 2026-09-24): a forfeit reaches paid only when the loser
+  marks done and the winner confirms — custom keeps proof → confirm/reject (auto-confirm
+  after 72 hours); concession and other honor paths use loser mark-paid (share may count
+  as the loser mark) then winner confirm/reject with the same 72-hour auto-confirm. No
+  Venmo, Stripe, wallets, or escrow in the app.
 
   Custom forfeit screening allows drinks and honor-system money; blocks payment rails and dangerous terms.
 
+  Settled history (Chris 2026-09-24): Profile and/or Home list the signed-in user's settled
+  waygrs (owed and paid), each linking to /c/[slug]; settled stay findable after paid.
+  Rivalry still lists every head-to-head challenge newest first. No new screens or routes.
+
   A test fails the build if any string in lib/copy.ts contains the whole words "bet,"
-  "wager," "odds" or "payout."
+  "wager," "odds" or "payout." Shipping UI noun for the unit is "waygr" (prefer waygr +
+  forfeit over bet); casual speech may still say call/challenge.
 
   The 21+ checkbox is required before a person's first create or accept.
 
