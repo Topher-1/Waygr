@@ -7,6 +7,7 @@ import { formatCall, formatForfeit } from "@/lib/challenges/format";
 import { getViewerProfile } from "@/lib/auth/profile";
 import { getForfeitForChallenge } from "@/lib/forfeits/queries";
 import { copy } from "@/lib/copy";
+import { challengeOgImage, getMetadataBase } from "@/lib/metadata";
 
 type PageProps = {
   params: Promise<{ slug: string }>;
@@ -32,21 +33,22 @@ export async function generateMetadata({
       call,
       forfeit,
     );
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+    const ogImage = challengeOgImage(slug);
 
     return {
+      metadataBase: getMetadataBase(),
       title,
       description: title,
       openGraph: {
         title,
         description: title,
-        images: [`${appUrl}/c/${slug}/opengraph-image`],
+        images: [ogImage],
       },
       twitter: {
         card: "summary_large_image",
         title,
         description: title,
-        images: [`${appUrl}/c/${slug}/opengraph-image`],
+        images: [ogImage.url],
       },
     };
   } catch {

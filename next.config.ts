@@ -16,6 +16,14 @@ const withSerwist = withSerwistInit({
 
 const nextConfig: NextConfig = {
   turbopack: {},
+  async rewrites() {
+    return [
+      {
+        source: "/c/:slug/opengraph-image.png",
+        destination: "/c/:slug/opengraph-image",
+      },
+    ];
+  },
 };
 
 export default withSerwist(nextConfig);
