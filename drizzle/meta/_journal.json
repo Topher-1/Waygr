@@ -71,6 +71,13 @@
       "when": 1727204100000,
       "tag": "0009_accept_during_live",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1727204200000,
+      "tag": "0010_forfeit_proof_and_profile_indexes",
+      "breakpoints": true
     }
   ]
 }

@@ -1,5 +1,9 @@
 import { formatCall } from "@/lib/challenges/format";
 import { hydrateChallengeRow } from "@/lib/challenges/hydrate";
+import {
+  listSettledWaygrs,
+  type SettledWaygr,
+} from "@/lib/challenges/settled-history";
 import type { ChallengeLanding } from "@/lib/challenges/types";
 import { createServiceClient } from "@/lib/supabase/service";
 import type { ViewerProfile } from "@/lib/auth/profile";
@@ -37,6 +41,7 @@ export type HomeFeed = {
   live: HomeLiveChallenge[];
   owedForfeits: HomeOwedForfeit[];
   openWaiting: HomeOpenChallenge[];
+  settledWaygrs: SettledWaygr[];
   tonightQuickCalls: TonightQuickCall[];
   tomorrowQuickCalls: TonightQuickCall[];
 };
@@ -143,8 +148,16 @@ export async function getHomeFeed(viewer: ViewerProfile): Promise<HomeFeed> {
 
   const tonightQuickCalls = tonight.slice(0, 6).map(toQuickCall);
   const tomorrowQuickCalls = tomorrow.slice(0, 6).map(toQuickCall);
+  const settledWaygrs = await listSettledWaygrs(viewer.id, 8);
 
-  return { live, owedForfeits, openWaiting, tonightQuickCalls, tomorrowQuickCalls };
+  return {
+    live,
+    owedForfeits,
+    openWaiting,
+    settledWaygrs,
+    tonightQuickCalls,
+    tomorrowQuickCalls,
+  };
 }
 
 export function formatHomeForfeitLine(item: HomeOwedForfeit): string {

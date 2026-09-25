@@ -59,6 +59,37 @@ export function formatCall(challenge: ChallengeLanding): string {
   });
 }
 
+/**
+ * The same call from the other side: the opponent always holds the opposite pick,
+ * and for a spread the mirrored line (BUILD · Definitions).
+ */
+export function formatCallForSide(
+  challenge: ChallengeLanding,
+  side: "creator" | "opponent",
+): string {
+  if (side === "creator") {
+    return formatCall(challenge);
+  }
+
+  const inverted: ChallengeLanding = {
+    ...challenge,
+    creatorPick:
+      challenge.creatorPick === "home"
+        ? "away"
+        : challenge.creatorPick === "away"
+          ? "home"
+          : challenge.creatorPick === "over"
+            ? "under"
+            : "over",
+    line:
+      challenge.market === "spread" && challenge.line !== null
+        ? String(-parseFloat(challenge.line))
+        : challenge.line,
+  };
+
+  return formatCall(inverted);
+}
+
 /** Forfeit line for previews. */
 export function formatForfeit(challenge: ChallengeLanding): string {
   switch (challenge.forfeitKind) {

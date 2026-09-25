@@ -13,13 +13,25 @@ import { ScoreStrip } from "@/components/challenge/score-strip";
 import { SignInSheet } from "@/components/auth/sign-in-sheet";
 import { Button } from "@/components/ui/button";
 import { BusyButton } from "@/components/ui/busy-button";
-import { shareChallengeLink } from "@/lib/challenges/share-challenge";
 import { voidReason } from "@/lib/challenges/views";
+import { cardFileName, cardPath } from "@/lib/cards/content";
+import { shareCardImage } from "@/lib/share/share-card";
+import { resolveForfeitRole } from "@/lib/forfeits/actions";
+import type { ForfeitKind, ForfeitStatus } from "@/lib/jobs/types";
+
+export type ChallengeForfeit = {
+  id: string;
+  kind: ForfeitKind;
+  status: ForfeitStatus;
+  owedBy: string;
+  owedTo: string;
+};
 
 type ChallengeClientProps = {
   challenge: ChallengeLanding;
   view: ChallengeView;
   viewer: ViewerProfile | null;
+  forfeit?: ChallengeForfeit | null;
   demoMode?: boolean;
 };
 
@@ -27,6 +39,7 @@ export function ChallengeClient({
   challenge,
   view: initialView,
   viewer,
+  forfeit = null,
   demoMode = false,
 }: ChallengeClientProps) {
   const router = useRouter();
@@ -38,8 +51,30 @@ export function ChallengeClient({
   const [accepted, setAccepted] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [sharing, setSharing] = useState(false);
-  const [linkCopied, setLinkCopied] = useState(false);
+  const [sharingCard, setSharingCard] = useState(false);
+  const [shareNote, setShareNote] = useState<string | null>(null);
+
+  const viewerWon =
+    viewer !== null &&
+    ((challenge.outcome === "creator" && viewer.id === challenge.creator.id) ||
+      (challenge.outcome === "opponent" && viewer.id === challenge.opponent?.id));
+
+  const forfeitRole = forfeit ? resolveForfeitRole(forfeit, viewer?.id ?? null) : null;
+
+  const forfeitAction =
+    forfeit &&
+    forfeitRole === "loser" &&
+    (forfeit.status === "owed" || forfeit.status === "proof_submitted")
+      ? {
+          id: forfeit.id,
+          label:
+            forfeit.status === "proof_submitted"
+              ? copy.forfeit.viewStatus
+              : copy.forfeit.settleAction,
+        }
+      : forfeit && forfeitRole === "winner" && forfeit.status === "proof_submitted"
+        ? { id: forfeit.id, label: copy.forfeit.proofReview }
+        : null;
 
   const acceptChallenge = useCallback(async () => {
     setLoading(true);
@@ -129,32 +164,31 @@ export function ChallengeClient({
     setError("No rematch game found. Pick one yourself.");
   }
 
-  async function handleSettledShare() {
-    if (sharing) return;
-    setSharing(true);
-    setLinkCopied(false);
-    const url = `${window.location.origin}/c/${challenge.slug}`;
-    try {
-      const result = await shareChallengeLink({
-        title: copy.appName,
-        text: "You're on the line.",
-        url,
-      });
-      if (result === "copied") {
-        setLinkCopied(true);
-      }
-    } finally {
-      setSharing(false);
-    }
-  }
-
-  const shareLoadingLabel =
-    typeof navigator !== "undefined" && navigator.share
-      ? copy.create.sharing
-      : copy.create.copying;
-
   function handleMakeYourOwn() {
     router.push("/");
+  }
+
+  async function handleShareResult() {
+    if (demoMode || sharingCard) return;
+    setSharingCard(true);
+    setShareNote(null);
+    try {
+      const result = await shareCardImage({
+        url: cardPath(challenge.slug, "called", "post"),
+        fileName: cardFileName(challenge.slug, "called", "post"),
+        title: copy.appName,
+        text: `${window.location.origin}/c/${challenge.slug}`,
+      });
+      setShareNote(
+        result === "failed"
+          ? copy.forfeit.shareFailed
+          : result === "dismissed"
+            ? null
+            : copy.result.shared,
+      );
+    } finally {
+      setSharingCard(false);
+    }
   }
 
   const voidCopy = () => {
@@ -237,16 +271,18 @@ export function ChallengeClient({
             <p className="font-[family-name:var(--font-barlow)] text-4xl font-extrabold">
               {challenge.outcome === "push"
                 ? copy.result.push
-                : viewer &&
-                    ((challenge.outcome === "creator" &&
-                      viewer.id === challenge.creator.id) ||
-                      (challenge.outcome === "opponent" &&
-                        viewer.id === challenge.opponent?.id))
+                : viewerWon
                   ? copy.result.win
                   : copy.result.loss}
             </p>
             <div className="flex flex-col gap-3">
+              {forfeitAction ? (
+                <Button onClick={() => router.push(`/f/${forfeitAction.id}`)}>
+                  {forfeitAction.label}
+                </Button>
+              ) : null}
               <BusyButton
+                variant={forfeitAction ? "secondary" : "primary"}
                 onClick={() => void handleRematch()}
                 loading={loading}
                 loadingLabel={copy.result.rematching}
@@ -255,15 +291,17 @@ export function ChallengeClient({
               </BusyButton>
               <BusyButton
                 variant="secondary"
-                loading={sharing}
-                loadingLabel={shareLoadingLabel}
+                loading={sharingCard}
+                loadingLabel={copy.result.sharing}
                 disabled={loading}
-                onClick={() => void handleSettledShare()}
+                onClick={() => void handleShareResult()}
               >
                 {copy.result.share}
               </BusyButton>
-              {linkCopied ? (
-                <p className="text-sm text-[var(--green)]">{copy.create.linkCopied}</p>
+              {shareNote ? (
+                <p role="status" className="text-sm text-[var(--muted)]">
+                  {shareNote}
+                </p>
               ) : null}
             </div>
           </section>

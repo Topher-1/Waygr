@@ -5,7 +5,10 @@ import { useCallback, useEffect, useState } from "react";
 import { copy } from "@/lib/copy";
 import type { ViewerProfile } from "@/lib/auth/profile";
 import type { HomeFeed } from "@/lib/challenges/home-queries";
-import { formatHomeForfeitLine } from "@/lib/challenges/home-queries";
+import {
+  formatHomeForfeitLine,
+} from "@/lib/challenges/home-queries";
+import { formatSettledWaygrLine } from "@/lib/challenges/settled-history";
 import { formatCall, formatKickoff, formatMatchup } from "@/lib/challenges/format";
 import { Button } from "@/components/ui/button";
 import { SignInSheet } from "@/components/auth/sign-in-sheet";
@@ -181,10 +184,30 @@ export function HomeClient({ viewer, feed }: HomeClientProps) {
                   {feed.owedForfeits.map((item) => (
                     <li key={item.id}>
                       <Link
-                        href={`/c/${item.challengeSlug}`}
+                        href={`/f/${item.id}`}
                         className="block rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-sm"
                       >
                         {formatHomeForfeitLine(item)}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
+
+            {feed.settledWaygrs.length > 0 && (
+              <section>
+                <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-[var(--muted)]">
+                  {copy.home.settled}
+                </h2>
+                <ul className="space-y-2">
+                  {feed.settledWaygrs.map((item) => (
+                    <li key={item.id}>
+                      <Link
+                        href={`/c/${item.slug}`}
+                        className="block rounded-xl border border-[var(--border)] bg-[var(--raised)] px-4 py-3 text-sm"
+                      >
+                        {formatSettledWaygrLine(item)}
                       </Link>
                     </li>
                   ))}
