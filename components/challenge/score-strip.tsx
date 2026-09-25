@@ -19,9 +19,18 @@ function liveLabel(game: ChallengeLandingGame): string | null {
   return period ?? clock ?? "LIVE";
 }
 
+function hasVisibleScores(game: ChallengeLandingGame): boolean {
+  return (
+    game.homeScore > 0 ||
+    game.awayScore > 0 ||
+    game.periodScores.length > 0
+  );
+}
+
 export function ScoreStrip({ game, stale = false, loading = false }: ScoreStripProps) {
   const isLive = game.status === "live";
-  const showSkeleton = loading || (stale && isLive);
+  const showSkeleton = loading || (stale && isLive && !hasVisibleScores(game));
+  const showLagging = stale && isLive && !loading;
 
   if (showSkeleton) {
     return (
@@ -30,7 +39,7 @@ export function ScoreStrip({ game, stale = false, loading = false }: ScoreStripP
           className="h-24 animate-pulse rounded-2xl bg-[var(--raised)]"
           aria-hidden
         />
-        {stale && isLive ? (
+        {showLagging ? (
           <p className="text-center text-sm text-[var(--muted)]">
             {copy.live.lagging}
           </p>
@@ -42,6 +51,7 @@ export function ScoreStrip({ game, stale = false, loading = false }: ScoreStripP
   const midLabel = liveLabel(game);
 
   return (
+    <div className="space-y-2">
     <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4">
       <div className="mb-2 flex items-center justify-between text-sm text-[var(--muted)]">
         <span>{game.league.toUpperCase()}</span>
@@ -69,6 +79,12 @@ export function ScoreStrip({ game, stale = false, loading = false }: ScoreStripP
           </p>
         </div>
       </div>
+    </div>
+    {showLagging ? (
+      <p className="text-center text-sm text-[var(--muted)]">
+        {copy.live.lagging}
+      </p>
+    ) : null}
     </div>
   );
 }

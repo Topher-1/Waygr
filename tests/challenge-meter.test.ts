@@ -138,4 +138,14 @@ describe("isScoreFeedStale", () => {
       }),
     ).toBe(false);
   });
+
+  it("does not flag live games updated within two minutes", () => {
+    expect(
+      isScoreFeedStale({
+        ...baseChallenge.game,
+        status: "live",
+        updatedAt: new Date(Date.now() - 60_000).toISOString(),
+      }),
+    ).toBe(false);
+  });
 });

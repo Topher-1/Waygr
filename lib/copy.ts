@@ -28,6 +28,7 @@ export const copy = {
     youUp: "You're up.",
     theyUp: (name: string) => `${name}'s up.`,
     tied: "Dead even.",
+    backHome: "Back home",
     lagging: "Score's lagging. Retrying.",
     trashTitle: "Trash talk",
     trashEmpty: "Say something.",

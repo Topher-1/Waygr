@@ -66,12 +66,60 @@ function awayTeamAbbr(game: BdlGame): string {
   return (game.visitor_team ?? game.away_team)?.abbreviation ?? 'UNK';
 }
 
+function sumQuarterScores(
+  q1?: number | null,
+  q2?: number | null,
+  q3?: number | null,
+  q4?: number | null,
+  ot?: number | null,
+): number | null {
+  const quarters = [q1, q2, q3, q4, ot];
+  const scored = quarters.filter((q) => q != null);
+  if (scored.length === 0) {
+    return null;
+  }
+  return scored.reduce((sum, q) => sum + (q ?? 0), 0);
+}
+
+/** NFL live payloads may omit aggregate scores while quarter fields are populated. */
 function readHomeScore(game: BdlGame): number {
-  return game.home_team_score ?? game.home_team_data?.runs ?? 0;
+  const fromQuarters = sumQuarterScores(
+    game.home_team_q1,
+    game.home_team_q2,
+    game.home_team_q3,
+    game.home_team_q4,
+    game.home_team_ot,
+  );
+  const aggregate = game.home_team_score ?? game.home_team_data?.runs ?? null;
+
+  if (fromQuarters !== null) {
+    if (aggregate == null || (aggregate === 0 && fromQuarters > 0)) {
+      return fromQuarters;
+    }
+    return aggregate;
+  }
+
+  return aggregate ?? 0;
 }
 
 function readAwayScore(game: BdlGame): number {
-  return game.visitor_team_score ?? game.away_team_data?.runs ?? 0;
+  const fromQuarters = sumQuarterScores(
+    game.visitor_team_q1,
+    game.visitor_team_q2,
+    game.visitor_team_q3,
+    game.visitor_team_q4,
+    game.visitor_team_ot,
+  );
+  const aggregate = game.visitor_team_score ?? game.away_team_data?.runs ?? null;
+
+  if (fromQuarters !== null) {
+    if (aggregate == null || (aggregate === 0 && fromQuarters > 0)) {
+      return fromQuarters;
+    }
+    return aggregate;
+  }
+
+  return aggregate ?? 0;
 }
 
 function readClock(game: BdlGame): string | null {
@@ -353,13 +401,8 @@ export class BallDontLieProvider implements ScoreProvider {
 
     const updates: GameUpdate[] = [];
     for (const id of providerGameIds) {
-      const data = await this.request<{ data: BdlGame[] }>(league, '/games', {
-        ids: id,
-        per_page: '1',
-      });
-      for (const game of data.data) {
-        updates.push(mapUpdate(game));
-      }
+      const data = await this.request<{ data: BdlGame }>(league, `/games/${id}`, {});
+      updates.push(mapUpdate(data.data));
     }
     return updates;
   }
