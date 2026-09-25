@@ -50,8 +50,8 @@ export async function getHomeFeed(viewer: ViewerProfile): Promise<HomeFeed> {
   const challengeSelect = `
     id, slug, state, market, creator_pick, line, quarter,
     forfeit_kind, forfeit_text, outcome, accepted_at, settled_at,
-    creator:profiles!challenges_creator_id_fkey ( id, handle, display_name, avatar_url ),
-    opponent:profiles!challenges_opponent_id_fkey ( id, handle, display_name, avatar_url ),
+    creator:profiles!creator_id ( id, handle, display_name, avatar_url ),
+    opponent:profiles!opponent_id ( id, handle, display_name, avatar_url ),
     game:games (
       id, league, starts_at, status, period, clock, home_score, away_score, home_team, away_team
     )
@@ -86,11 +86,11 @@ export async function getHomeFeed(viewer: ViewerProfile): Promise<HomeFeed> {
       kind,
       challenge:challenges!inner (
         id, slug, market, creator_pick, line, quarter, forfeit_kind, forfeit_text,
-        creator:profiles!challenges_creator_id_fkey ( display_name ),
-        opponent:profiles!challenges_opponent_id_fkey ( display_name ),
+        creator:profiles!creator_id ( display_name ),
+        opponent:profiles!opponent_id ( display_name ),
         game:games ( home_team, away_team, league, starts_at, status, id, period, clock, home_score, away_score )
       ),
-      owed_to:profiles!forfeits_owed_to_fkey ( display_name )
+      owed_to:profiles!owed_to ( display_name )
     `,
     )
     .eq("owed_by", viewer.id)
