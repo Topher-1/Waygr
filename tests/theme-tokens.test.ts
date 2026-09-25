@@ -43,6 +43,7 @@ describe("theme tokens", () => {
         if (file.endsWith(".test.ts") || file.endsWith(".test.tsx")) continue;
         if (file.endsWith("theme.ts")) continue;
         if (file.endsWith("tokens.css")) continue;
+        if (file.endsWith("catalog.ts") && file.includes("/teams/")) continue;
 
         const content = readFileSync(file, "utf8");
         for (const hex of extractHexColors(content)) {

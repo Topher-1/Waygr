@@ -78,6 +78,7 @@ export const copy = {
     preview: "Your call",
     next: "Next",
     share: "Share challenge",
+    linkCopied: "Link copied",
     markets: {
       spread: "Spread",
       winner: "Winner",

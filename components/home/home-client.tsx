@@ -241,12 +241,6 @@ export function HomeClient({ viewer, feed }: HomeClientProps) {
           </div>
         )}
 
-        <Link
-          href="/demo"
-          className="mt-8 text-center text-sm text-[var(--muted)] underline-offset-2 hover:underline"
-        >
-          Preview challenge views
-        </Link>
       </main>
 
       <div className="fixed inset-x-0 bottom-0 z-40 border-t border-[var(--border)] bg-[var(--surface)] p-4">
