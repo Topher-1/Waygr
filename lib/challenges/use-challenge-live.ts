@@ -41,6 +41,32 @@ export function useChallengeLive({
     }
 
     const supabase = createClient();
+    const gameSelect =
+      "id, status, period, clock, home_score, away_score, period_scores, updated_at";
+
+    const refreshGame = async () => {
+      const { data, error } = await supabase
+        .from("games")
+        .select(gameSelect)
+        .eq("id", challenge.game.id)
+        .maybeSingle();
+      if (error || !data) {
+        return;
+      }
+      setGame((current) =>
+        mapRealtimeGameRow(data as never, {
+          ...current,
+          homeTeam: challenge.game.homeTeam,
+          awayTeam: challenge.game.awayTeam,
+        }),
+      );
+    };
+
+    const pollId = window.setInterval(() => {
+      void refreshGame();
+    }, 30_000);
+    void refreshGame();
+
     const gameChannel = supabase
       .channel(`live-game-${challenge.game.id}`)
       .on(
@@ -84,6 +110,7 @@ export function useChallengeLive({
       .subscribe();
 
     return () => {
+      window.clearInterval(pollId);
       void supabase.removeChannel(gameChannel);
       void supabase.removeChannel(challengeChannel);
     };

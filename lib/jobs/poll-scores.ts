@@ -74,6 +74,7 @@ export async function runPollScores(
       const changed =
         game.status !== update.status ||
         game.period !== update.period ||
+        game.clock !== update.clock ||
         game.homeScore !== update.homeScore ||
         game.awayScore !== update.awayScore ||
         JSON.stringify(game.periodScores) !== JSON.stringify(update.periodScores);

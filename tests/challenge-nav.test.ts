@@ -18,11 +18,11 @@ describe("challenge navigation escape hatch", () => {
     expect(shellSource).not.toMatch(/<span[\s\S]*\{APP_NAME\}/);
   });
 
-  it("shows a Make a call link on live and post-accept views", () => {
+  it("shows a back-home link on live and post-accept views", () => {
     expect(clientSource).toMatch(/showHomeEscape/);
     expect(clientSource).toMatch(/view === "live"/);
     expect(clientSource).toMatch(/<Link[\s\S]*href="\/"/);
-    expect(clientSource).toMatch(/copy\.home\.makeCall/);
+    expect(clientSource).toMatch(/copy\.live\.backHome/);
   });
 
   it("shows creator waiting view instead of accept CTAs", () => {

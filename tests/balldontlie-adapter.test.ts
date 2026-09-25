@@ -131,6 +131,114 @@ describe('balldontlie adapter', () => {
     expect(update.period).toBe(3);
   });
 
+  it('maps NFL live scores from quarter fields when aggregate is null', () => {
+    const update = mapBalldontlieUpdate({
+      id: 1392248,
+      date: '2026-09-25T00:15:00.000Z',
+      status: '2nd Qtr',
+      status_state: 'in_progress',
+      home_team: { abbreviation: 'GB' },
+      visitor_team: { abbreviation: 'ATL' },
+      home_team_score: null,
+      visitor_team_score: null,
+      home_team_q1: 7,
+      home_team_q2: 3,
+      home_team_q3: null,
+      home_team_q4: null,
+      home_team_ot: null,
+      visitor_team_q1: 0,
+      visitor_team_q2: 10,
+      visitor_team_q3: null,
+      visitor_team_q4: null,
+      visitor_team_ot: null,
+      period: 2,
+      time: '7:42',
+    });
+
+    expect(update.homeScore).toBe(10);
+    expect(update.awayScore).toBe(10);
+    expect(update.period).toBe(2);
+    expect(update.clock).toBe('7:42');
+    expect(update.periodScores).toEqual([
+      { period: 1, home: 7, away: 0 },
+      { period: 2, home: 3, away: 10 },
+    ]);
+  });
+
+  it('maps NFL live scores from quarter fields when aggregate is stuck at zero', () => {
+    const update = mapBalldontlieUpdate({
+      id: 1392248,
+      date: '2026-09-25T00:15:00.000Z',
+      status: '2nd Qtr',
+      status_state: 'in_progress',
+      home_team: { abbreviation: 'GB' },
+      visitor_team: { abbreviation: 'ATL' },
+      home_team_score: 0,
+      visitor_team_score: 0,
+      home_team_q1: 14,
+      home_team_q2: 0,
+      home_team_q3: null,
+      home_team_q4: null,
+      home_team_ot: null,
+      visitor_team_q1: 7,
+      visitor_team_q2: 7,
+      visitor_team_q3: null,
+      visitor_team_q4: null,
+      visitor_team_ot: null,
+      period: 2,
+      display_clock: '0:31',
+    });
+
+    expect(update.homeScore).toBe(14);
+    expect(update.awayScore).toBe(14);
+    expect(update.clock).toBe('0:31');
+  });
+
+  it('getLiveForLeague fetches /games/{id} instead of unsupported ids query', async () => {
+    const capturedUrls: string[] = [];
+    const fetchImpl = async (input: string | URL | Request) => {
+      capturedUrls.push(String(input));
+      return {
+        ok: true,
+        json: async () => ({
+          data: {
+            id: 1392248,
+            date: '2026-09-25T00:15:00.000Z',
+            status: '2nd Qtr',
+            status_state: 'in_progress',
+            home_team: { abbreviation: 'GB' },
+            visitor_team: { abbreviation: 'ATL' },
+            home_team_score: 10,
+            visitor_team_score: 10,
+            home_team_q1: 7,
+            home_team_q2: 3,
+            home_team_q3: null,
+            home_team_q4: null,
+            home_team_ot: null,
+            visitor_team_q1: 0,
+            visitor_team_q2: 10,
+            visitor_team_q3: null,
+            visitor_team_q4: null,
+            visitor_team_ot: null,
+            period: 2,
+            time: '7:42',
+          },
+        }),
+      } as Response;
+    };
+
+    const provider = new BallDontLieProvider('test-key', fetchImpl);
+    const updates = await provider.getLiveForLeague('nfl', ['1392248']);
+
+    expect(updates).toHaveLength(1);
+    expect(updates[0].homeScore).toBe(10);
+    expect(updates[0].awayScore).toBe(10);
+    expect(capturedUrls).toHaveLength(1);
+    const url = new URL(capturedUrls[0]);
+    expect(url.pathname).toBe('/nfl/v1/games/1392248');
+    expect(url.searchParams.has('ids')).toBe(false);
+  });
+
   it('maps MLB game payload with inning scores', () => {
     const game = mapBalldontlieGame('mlb', {
       id: 42,
