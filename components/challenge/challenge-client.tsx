@@ -12,6 +12,8 @@ import { LiveView } from "@/components/challenge/live-view";
 import { ScoreStrip } from "@/components/challenge/score-strip";
 import { SignInSheet } from "@/components/auth/sign-in-sheet";
 import { Button } from "@/components/ui/button";
+import { BusyButton } from "@/components/ui/busy-button";
+import { shareChallengeLink } from "@/lib/challenges/share-challenge";
 import { voidReason } from "@/lib/challenges/views";
 
 type ChallengeClientProps = {
@@ -36,44 +38,51 @@ export function ChallengeClient({
   const [accepted, setAccepted] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [sharing, setSharing] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
 
   const acceptChallenge = useCallback(async () => {
     setLoading(true);
     setError(null);
-    const res = await fetch(`/api/challenges/${challenge.id}/accept`, {
-      method: "POST",
-    });
-    const body = (await res.json()) as {
-      ok?: boolean;
-      reason?: string;
-    };
-    setLoading(false);
+    try {
+      const res = await fetch(`/api/challenges/${challenge.id}/accept`, {
+        method: "POST",
+      });
+      const body = (await res.json()) as {
+        ok?: boolean;
+        reason?: string;
+      };
 
-    if (res.ok && body.ok) {
-      setAccepted(true);
-      setView("live");
-      router.refresh();
-      return;
+      if (res.ok && body.ok) {
+        setAccepted(true);
+        setView("live");
+        router.refresh();
+        return;
+      }
+
+      if (body.reason === "taken") {
+        setView("taken");
+        return;
+      }
+
+      if (body.reason === "adult_required" || body.reason === "unauthorized") {
+        setSignInMode(
+          body.reason === "adult_required" ? "adult-only" : "sign-in",
+        );
+        setShowSignIn(true);
+        return;
+      }
+
+      setError(
+        body.reason === "own_challenge"
+          ? "You can't accept your own challenge."
+          : body.reason === "game_over"
+            ? "This game is over — can't accept now."
+            : "Could not accept. Try again.",
+      );
+    } finally {
+      setLoading(false);
     }
-
-    if (body.reason === "taken") {
-      setView("taken");
-      return;
-    }
-
-    if (body.reason === "adult_required" || body.reason === "unauthorized") {
-      setSignInMode(body.reason === "adult_required" ? "adult-only" : "sign-in");
-      setShowSignIn(true);
-      return;
-    }
-
-    setError(
-      body.reason === "own_challenge"
-        ? "You can't accept your own challenge."
-        : body.reason === "game_over"
-          ? "This game is over — can't accept now."
-          : "Could not accept. Try again.",
-    );
   }, [challenge.id, router]);
 
   function handleImIn() {
@@ -100,6 +109,7 @@ export function ChallengeClient({
 
   async function handleRematch() {
     setLoading(true);
+    setError(null);
     const res = await fetch(`/api/challenges/${challenge.id}/rematch`, {
       method: "POST",
     });
@@ -107,7 +117,6 @@ export function ChallengeClient({
       ok?: boolean;
       prefill?: Record<string, unknown>;
     };
-    setLoading(false);
     if (res.ok && body.ok && body.prefill) {
       sessionStorage.setItem(
         "waygr-create-prefill",
@@ -116,8 +125,33 @@ export function ChallengeClient({
       router.push("/");
       return;
     }
+    setLoading(false);
     setError("No rematch game found. Pick one yourself.");
   }
+
+  async function handleSettledShare() {
+    if (sharing) return;
+    setSharing(true);
+    setLinkCopied(false);
+    const url = `${window.location.origin}/c/${challenge.slug}`;
+    try {
+      const result = await shareChallengeLink({
+        title: copy.appName,
+        text: "You're on the line.",
+        url,
+      });
+      if (result === "copied") {
+        setLinkCopied(true);
+      }
+    } finally {
+      setSharing(false);
+    }
+  }
+
+  const shareLoadingLabel =
+    typeof navigator !== "undefined" && navigator.share
+      ? copy.create.sharing
+      : copy.create.copying;
 
   function handleMakeYourOwn() {
     router.push("/");
@@ -142,14 +176,16 @@ export function ChallengeClient({
               {error ? (
                 <p className="text-center text-sm text-[var(--rose)]">{error}</p>
               ) : null}
-              <Button
+              <BusyButton
                 onClick={handleImIn}
-                disabled={loading || demoMode}
+                loading={loading}
+                loadingLabel={copy.challenge.accepting}
+                disabled={demoMode}
                 className="w-full"
               >
                 {copy.challenge.accept}
-              </Button>
-              <Button variant="ghost" className="w-full">
+              </BusyButton>
+              <Button variant="ghost" className="w-full" disabled={loading}>
                 {copy.challenge.decline}
               </Button>
             </div>
@@ -210,18 +246,25 @@ export function ChallengeClient({
                   : copy.result.loss}
             </p>
             <div className="flex flex-col gap-3">
-              <Button onClick={() => void handleRematch()} disabled={loading}>
-                {copy.result.rematch}
-              </Button>
-              <Button
-                variant="secondary"
-                onClick={() => {
-                  const url = `${window.location.origin}/c/${challenge.slug}`;
-                  void navigator.clipboard?.writeText(url);
-                }}
+              <BusyButton
+                onClick={() => void handleRematch()}
+                loading={loading}
+                loadingLabel={copy.result.rematching}
               >
-                Share
-              </Button>
+                {copy.result.rematch}
+              </BusyButton>
+              <BusyButton
+                variant="secondary"
+                loading={sharing}
+                loadingLabel={shareLoadingLabel}
+                disabled={loading}
+                onClick={() => void handleSettledShare()}
+              >
+                {copy.result.share}
+              </BusyButton>
+              {linkCopied ? (
+                <p className="text-sm text-[var(--green)]">{copy.create.linkCopied}</p>
+              ) : null}
             </div>
           </section>
         )}

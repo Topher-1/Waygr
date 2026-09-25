@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { mapAuthError } from "@/lib/auth/errors";
 import { copy } from "@/lib/copy";
 import { Button } from "@/components/ui/button";
+import { BusyButton } from "@/components/ui/busy-button";
 
 type SignInSheetProps = {
   open: boolean;
@@ -75,49 +76,49 @@ export function SignInSheet({
     setLoading(true);
     setError(null);
 
-    const result =
-      authMode === "sign-up"
-        ? await supabase.auth.signUp({ email, password })
-        : await supabase.auth.signInWithPassword({ email, password });
+    try {
+      const result =
+        authMode === "sign-up"
+          ? await supabase.auth.signUp({ email, password })
+          : await supabase.auth.signInWithPassword({ email, password });
 
-    setLoading(false);
+      if (result.error) {
+        const mapped = mapAuthError(result.error.message);
+        if (mapped.suggestSignIn) {
+          setError(copy.auth.alreadyRegistered);
+          setAuthMode("sign-in");
+          return;
+        }
+        setError(mapped.text);
+        return;
+      }
 
-    if (result.error) {
-      const mapped = mapAuthError(result.error.message);
-      if (mapped.suggestSignIn) {
-        setError(copy.auth.alreadyRegistered);
+      if (authMode === "sign-up" && result.data.user && !result.data.session) {
+        setError("Check your email to confirm your account, then sign in.");
         setAuthMode("sign-in");
         return;
       }
-      setError(mapped.text);
-      return;
-    }
 
-    if (authMode === "sign-up" && result.data.user && !result.data.session) {
-      setError("Check your email to confirm your account, then sign in.");
-      setAuthMode("sign-in");
-      return;
-    }
-
-    const needsAdult = await setupProfile();
-    if (needsAdult) {
-      if (authMode === "sign-up" && adultChecked) {
-        setLoading(true);
-        const confirmed = await persistAdultConfirmation();
-        setLoading(false);
-        if (!confirmed) {
+      const needsAdult = await setupProfile();
+      if (needsAdult) {
+        if (authMode === "sign-up" && adultChecked) {
+          const confirmed = await persistAdultConfirmation();
+          if (!confirmed) {
+            return;
+          }
+          onComplete();
+          onClose();
           return;
         }
-        onComplete();
-        onClose();
+        setStep("adult");
         return;
       }
-      setStep("adult");
-      return;
-    }
 
-    onComplete();
-    onClose();
+      onComplete();
+      onClose();
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function confirmAdult() {
@@ -127,24 +128,30 @@ export function SignInSheet({
     }
     setLoading(true);
     setError(null);
-    const confirmed = await persistAdultConfirmation();
-    setLoading(false);
-    if (!confirmed) {
-      return;
+    try {
+      const confirmed = await persistAdultConfirmation();
+      if (!confirmed) {
+        return;
+      }
+      onComplete();
+      onClose();
+    } finally {
+      setLoading(false);
     }
-    onComplete();
-    onClose();
   }
 
   async function handleSignOutFromAdult() {
     setLoading(true);
     setError(null);
-    await supabase.auth.signOut();
-    setLoading(false);
-    setStep("credentials");
-    setAuthMode("sign-in");
-    setAdultChecked(false);
-    setError(copy.auth.adultAbandonMessage);
+    try {
+      await supabase.auth.signOut();
+      setStep("credentials");
+      setAuthMode("sign-in");
+      setAdultChecked(false);
+      setError(copy.auth.adultAbandonMessage);
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function handleClose() {
@@ -179,7 +186,8 @@ export function SignInSheet({
           <button
             type="button"
             onClick={() => void handleClose()}
-            className="text-[var(--muted)] hover:text-[var(--text)]"
+            disabled={loading}
+            className="text-[var(--muted)] hover:text-[var(--text)] disabled:opacity-50"
             aria-label="Close"
           >
             ✕
@@ -238,12 +246,20 @@ export function SignInSheet({
                 <span>{copy.auth.adultCheckbox}</span>
               </label>
             ) : null}
-            <Button type="submit" disabled={loading || !credentialsReady}>
+            <BusyButton
+              type="submit"
+              disabled={!credentialsReady}
+              loading={loading}
+              loadingLabel={
+                authMode === "sign-up" ? copy.auth.signingUp : copy.auth.signingIn
+              }
+            >
               {authMode === "sign-up" ? copy.auth.signUp : copy.auth.signIn}
-            </Button>
+            </BusyButton>
             <Button
               type="button"
               variant="ghost"
+              disabled={loading}
               onClick={() => {
                 setAuthMode(authMode === "sign-in" ? "sign-up" : "sign-in");
                 setError(null);
@@ -273,9 +289,13 @@ export function SignInSheet({
               />
               <span>{copy.auth.adultCheckbox}</span>
             </label>
-            <Button onClick={() => void confirmAdult()} disabled={loading}>
+            <BusyButton
+              onClick={() => void confirmAdult()}
+              loading={loading}
+              loadingLabel={copy.auth.working}
+            >
               Continue
-            </Button>
+            </BusyButton>
             <Button
               type="button"
               variant="ghost"

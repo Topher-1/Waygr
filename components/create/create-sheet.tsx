@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { copy } from "@/lib/copy";
 import { Button } from "@/components/ui/button";
+import { BusyButton } from "@/components/ui/busy-button";
 import {
   defaultLine,
   stepLine,
@@ -149,6 +150,7 @@ export function CreateSheet({
   const [rematchOf, setRematchOf] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [sharing, setSharing] = useState(false);
   const [createdSlug, setCreatedSlug] = useState<string | null>(null);
   const [linkCopied, setLinkCopied] = useState(false);
 
@@ -185,6 +187,7 @@ export function CreateSheet({
     setError(null);
     setCreatedSlug(null);
     setLinkCopied(false);
+    setSharing(false);
     void loadGames();
   }, [open, loadGames]);
 
@@ -283,52 +286,59 @@ export function CreateSheet({
     setSubmitting(true);
     setError(null);
 
-    const payload: Record<string, unknown> = {
-      gameId,
-      market,
-      creatorPick,
-      forfeitKind: kind,
-      rematchOf,
-    };
-    if (market === "spread" || market === "total") {
-      payload.line = line;
-    }
-    if (market === "quarter_winner") {
-      payload.quarter = quarter;
-    }
-    if (kind === "custom") {
-      payload.forfeitText = text;
-    }
+    try {
+      const payload: Record<string, unknown> = {
+        gameId,
+        market,
+        creatorPick,
+        forfeitKind: kind,
+        rematchOf,
+      };
+      if (market === "spread" || market === "total") {
+        payload.line = line;
+      }
+      if (market === "quarter_winner") {
+        payload.quarter = quarter;
+      }
+      if (kind === "custom") {
+        payload.forfeitText = text;
+      }
 
-    const res = await fetch("/api/challenges", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-    const body = (await res.json()) as { ok?: boolean; slug?: string; reason?: string };
-    setSubmitting(false);
+      const res = await fetch("/api/challenges", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const body = (await res.json()) as {
+        ok?: boolean;
+        slug?: string;
+        reason?: string;
+      };
 
-    if (!res.ok || !body.ok || !body.slug) {
-      setError(
-        body.reason === "game_over"
-          ? "This game is over — pick another."
-          : body.reason === "forfeit_screened"
-            ? copy.screening.rejected
-            : body.reason === "adult_required"
-              ? copy.auth.adultConfirmError
-              : "Could not create. Try again.",
-      );
-      return;
-    }
+      if (!res.ok || !body.ok || !body.slug) {
+        setError(
+          body.reason === "game_over"
+            ? "This game is over — pick another."
+            : body.reason === "forfeit_screened"
+              ? copy.screening.rejected
+              : body.reason === "adult_required"
+                ? copy.auth.adultConfirmError
+                : "Could not create. Try again.",
+        );
+        return;
+      }
 
-    setForfeitKind(kind);
-    if (kind === "custom") {
-      setForfeitText(text);
+      setForfeitKind(kind);
+      if (kind === "custom") {
+        setForfeitText(text);
+      }
+      localStorage.setItem(LAST_FORFEIT_KEY, kind);
+      setCreatedSlug(body.slug);
+      setStep("preview");
+      onCreated?.(body.slug);
+    } finally {
+      setSubmitting(false);
     }
-    localStorage.setItem(LAST_FORFEIT_KEY, kind);
-    setCreatedSlug(body.slug);
-    setStep("preview");
-    onCreated?.(body.slug);
   }
 
   function togglePreset(preset: ForfeitPreset) {
@@ -397,24 +407,35 @@ export function CreateSheet({
     });
 
   async function handleShare() {
-    if (!createdSlug) return;
+    if (!createdSlug || sharing) return;
+    setSharing(true);
+    setLinkCopied(false);
     const url = `${window.location.origin}/c/${createdSlug}`;
-    const result = await shareChallengeLink({
-      title: copy.appName,
-      text: "You're on the line.",
-      url,
-    });
+    try {
+      const result = await shareChallengeLink({
+        title: copy.appName,
+        text: "You're on the line.",
+        url,
+      });
 
-    if (result === "shared") {
-      onClose();
-      router.push(`/c/${createdSlug}`);
-      return;
-    }
+      if (result === "shared") {
+        onClose();
+        router.push(`/c/${createdSlug}`);
+        return;
+      }
 
-    if (result === "copied") {
-      setLinkCopied(true);
+      if (result === "copied") {
+        setLinkCopied(true);
+      }
+    } finally {
+      setSharing(false);
     }
   }
+
+  const shareLoadingLabel =
+    typeof navigator !== "undefined" && navigator.share
+      ? copy.create.sharing
+      : copy.create.copying;
 
   const showScreeningError =
     !customScreenResult.ok && customScreenResult.reason !== "empty";
@@ -446,7 +467,8 @@ export function CreateSheet({
           <button
             type="button"
             onClick={onClose}
-            className="text-[var(--muted)] hover:text-[var(--text)]"
+            disabled={submitting || sharing}
+            className="text-[var(--muted)] hover:text-[var(--text)] disabled:opacity-50"
             aria-label="Close"
           >
             ✕
@@ -679,13 +701,14 @@ export function CreateSheet({
                 ) : null}
 
                 {canSubmitForfeit ? (
-                  <Button
+                  <BusyButton
                     className="w-full"
-                    disabled={submitting}
+                    loading={submitting}
+                    loadingLabel={copy.create.creating}
                     onClick={() => submitForfeitSelection()}
                   >
                     {copy.create.next}
-                  </Button>
+                  </BusyButton>
                 ) : null}
               </div>
             </div>
@@ -705,13 +728,15 @@ export function CreateSheet({
                 </p>
                 <p className="mt-1 text-lg font-semibold">{stakeDisplay}</p>
               </div>
-              <Button
+              <BusyButton
                 className="w-full"
+                loading={sharing}
+                loadingLabel={shareLoadingLabel}
                 onClick={() => void handleShare()}
                 disabled={submitting}
               >
                 {copy.create.share}
-              </Button>
+              </BusyButton>
               {linkCopied ? (
                 <p className="text-sm text-[var(--green)]">{copy.create.linkCopied}</p>
               ) : null}
