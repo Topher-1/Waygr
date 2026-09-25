@@ -15,10 +15,10 @@ const CHALLENGE_SELECT = `
   outcome,
   accepted_at,
   settled_at,
-  creator:profiles!challenges_creator_id_fkey (
+  creator:profiles!creator_id (
     id, handle, display_name, avatar_url
   ),
-  opponent:profiles!challenges_opponent_id_fkey (
+  opponent:profiles!opponent_id (
     id, handle, display_name, avatar_url
   ),
   game:games (
