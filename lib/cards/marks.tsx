@@ -4,7 +4,11 @@
  * the outlined wordmark (no font download).
  * @see docs/brand/MANIFEST.md
  */
-import { WORDMARK_PADDING, WORDMARK_PATH } from "@/lib/brand/marks";
+import {
+  WORDMARK_PATH,
+  WORDMARK_VIEW_HEIGHT,
+  WORDMARK_VIEW_WIDTH,
+} from "@/lib/brand/marks";
 import { tokens } from "@/lib/theme";
 
 /** Outlined wordmark at a given pixel width; height follows the artboard. */
@@ -15,19 +19,18 @@ export function Wordmark({
   width: number;
   color?: string;
 }) {
-  const height = Math.round((width * 782) / 2247.5);
+  const height = Math.round((width * WORDMARK_VIEW_HEIGHT) / WORDMARK_VIEW_WIDTH);
   return (
     <svg
       width={width}
       height={height}
-      viewBox="0 0 2247.5 782"
+      viewBox={`0 0 ${WORDMARK_VIEW_WIDTH} ${WORDMARK_VIEW_HEIGHT}`}
       fill="none"
       role="img"
       aria-label="Waygr"
+      style={{ overflow: "visible", display: "flex" }}
     >
-      <g transform={`translate(${WORDMARK_PADDING} ${WORDMARK_PADDING})`} fill={color}>
-        <path d={WORDMARK_PATH} />
-      </g>
+      <path d={WORDMARK_PATH} fill={color} />
     </svg>
   );
 }
