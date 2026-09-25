@@ -7,7 +7,7 @@ import type {
   ChallengeLandingProfile,
   TrashTalkMessage,
 } from "@/lib/challenges/types";
-import { Button } from "@/components/ui/button";
+import { BusyButton } from "@/components/ui/busy-button";
 
 type TrashTalkProps = {
   challengeId: string;
@@ -174,9 +174,14 @@ export function TrashTalk({
           disabled={demoMode || sending}
           className="min-h-11 flex-1 rounded-xl border border-[var(--border)] bg-[var(--raised)] px-3 text-base text-[var(--text)] placeholder:text-[var(--muted)] disabled:opacity-60"
         />
-        <Button type="submit" disabled={demoMode || sending || !body.trim()}>
+        <BusyButton
+          type="submit"
+          disabled={demoMode || !body.trim()}
+          loading={sending}
+          loadingLabel={copy.live.trashSending}
+        >
           {copy.live.trashSend}
-        </Button>
+        </BusyButton>
       </form>
       {error ? <p className="text-sm text-[var(--rose)]">{error}</p> : null}
     </section>

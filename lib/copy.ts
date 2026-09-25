@@ -11,6 +11,7 @@ export const copy = {
     preview: (name: string, call: string, forfeit: string) =>
       `${name} says ${call}. Loser ${forfeit}. You in?`,
     accept: "I'm in",
+    accepting: "Working…",
     decline: "Not this one",
     accepted: "You're on.",
     tooSlow: (name: string) => `Too slow. ${name} took it.`,
@@ -27,6 +28,7 @@ export const copy = {
     trashDemoEmpty: "Messages show up here in a live challenge.",
     trashPlaceholder: "Talk trash…",
     trashSend: "Send",
+    trashSending: "Sending…",
     trashSendError: "Could not send. Try again.",
   },
 
@@ -36,6 +38,8 @@ export const copy = {
     push: "Push. Nobody owes.",
     void: "Game's off. Challenge voided.",
     rematch: "Tap to rematch",
+    rematching: "Working…",
+    share: "Share",
   },
 
   forfeit: {
@@ -87,6 +91,9 @@ export const copy = {
     preview: "Your call",
     next: "Next",
     share: "Share challenge",
+    sharing: "Opening share…",
+    copying: "Copying…",
+    creating: "Creating…",
     linkCopied: "Link copied",
     markets: {
       spread: "Spread",
@@ -111,7 +118,10 @@ export const copy = {
     signInTitle: "Sign in",
     signUpTitle: "Create account",
     signIn: "Sign in",
+    signingIn: "Signing in…",
     signUp: "Create account",
+    signingUp: "Creating account…",
+    working: "Working…",
     needAccount: "Need an account? Sign up",
     haveAccount: "Already have an account? Sign in",
     termsNote: "By continuing you agree to our Terms and Privacy Policy.",

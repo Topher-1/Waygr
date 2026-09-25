@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { copy } from "@/lib/copy";
 import { Button } from "@/components/ui/button";
+import { BusyButton } from "@/components/ui/busy-button";
 import {
   defaultLine,
   stepLine,
@@ -149,6 +150,7 @@ export function CreateSheet({
   const [rematchOf, setRematchOf] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [sharing, setSharing] = useState(false);
   const [createdSlug, setCreatedSlug] = useState<string | null>(null);
   const [linkCopied, setLinkCopied] = useState(false);
 
@@ -185,6 +187,7 @@ export function CreateSheet({
     setError(null);
     setCreatedSlug(null);
     setLinkCopied(false);
+    setSharing(false);
     void loadGames();
   }, [open, loadGames]);
 
@@ -397,24 +400,35 @@ export function CreateSheet({
     });
 
   async function handleShare() {
-    if (!createdSlug) return;
+    if (!createdSlug || sharing) return;
+    setSharing(true);
+    setLinkCopied(false);
     const url = `${window.location.origin}/c/${createdSlug}`;
-    const result = await shareChallengeLink({
-      title: copy.appName,
-      text: "You're on the line.",
-      url,
-    });
+    try {
+      const result = await shareChallengeLink({
+        title: copy.appName,
+        text: "You're on the line.",
+        url,
+      });
 
-    if (result === "shared") {
-      onClose();
-      router.push(`/c/${createdSlug}`);
-      return;
-    }
+      if (result === "shared") {
+        onClose();
+        router.push(`/c/${createdSlug}`);
+        return;
+      }
 
-    if (result === "copied") {
-      setLinkCopied(true);
+      if (result === "copied") {
+        setLinkCopied(true);
+      }
+    } finally {
+      setSharing(false);
     }
   }
+
+  const shareLoadingLabel =
+    typeof navigator !== "undefined" && navigator.share
+      ? copy.create.sharing
+      : copy.create.copying;
 
   const showScreeningError =
     !customScreenResult.ok && customScreenResult.reason !== "empty";
@@ -446,7 +460,8 @@ export function CreateSheet({
           <button
             type="button"
             onClick={onClose}
-            className="text-[var(--muted)] hover:text-[var(--text)]"
+            disabled={submitting || sharing}
+            className="text-[var(--muted)] hover:text-[var(--text)] disabled:opacity-50"
             aria-label="Close"
           >
             ✕
@@ -679,13 +694,14 @@ export function CreateSheet({
                 ) : null}
 
                 {canSubmitForfeit ? (
-                  <Button
+                  <BusyButton
                     className="w-full"
-                    disabled={submitting}
+                    loading={submitting}
+                    loadingLabel={copy.create.creating}
                     onClick={() => submitForfeitSelection()}
                   >
                     {copy.create.next}
-                  </Button>
+                  </BusyButton>
                 ) : null}
               </div>
             </div>
@@ -705,13 +721,15 @@ export function CreateSheet({
                 </p>
                 <p className="mt-1 text-lg font-semibold">{stakeDisplay}</p>
               </div>
-              <Button
+              <BusyButton
                 className="w-full"
+                loading={sharing}
+                loadingLabel={shareLoadingLabel}
                 onClick={() => void handleShare()}
                 disabled={submitting}
               >
                 {copy.create.share}
-              </Button>
+              </BusyButton>
               {linkCopied ? (
                 <p className="text-sm text-[var(--green)]">{copy.create.linkCopied}</p>
               ) : null}

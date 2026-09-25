@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { mapAuthError } from "@/lib/auth/errors";
 import { copy } from "@/lib/copy";
 import { Button } from "@/components/ui/button";
+import { BusyButton } from "@/components/ui/busy-button";
 
 type SignInSheetProps = {
   open: boolean;
@@ -80,9 +81,8 @@ export function SignInSheet({
         ? await supabase.auth.signUp({ email, password })
         : await supabase.auth.signInWithPassword({ email, password });
 
-    setLoading(false);
-
     if (result.error) {
+      setLoading(false);
       const mapped = mapAuthError(result.error.message);
       if (mapped.suggestSignIn) {
         setError(copy.auth.alreadyRegistered);
@@ -94,6 +94,7 @@ export function SignInSheet({
     }
 
     if (authMode === "sign-up" && result.data.user && !result.data.session) {
+      setLoading(false);
       setError("Check your email to confirm your account, then sign in.");
       setAuthMode("sign-in");
       return;
@@ -102,7 +103,6 @@ export function SignInSheet({
     const needsAdult = await setupProfile();
     if (needsAdult) {
       if (authMode === "sign-up" && adultChecked) {
-        setLoading(true);
         const confirmed = await persistAdultConfirmation();
         setLoading(false);
         if (!confirmed) {
@@ -112,10 +112,12 @@ export function SignInSheet({
         onClose();
         return;
       }
+      setLoading(false);
       setStep("adult");
       return;
     }
 
+    setLoading(false);
     onComplete();
     onClose();
   }
@@ -179,7 +181,8 @@ export function SignInSheet({
           <button
             type="button"
             onClick={() => void handleClose()}
-            className="text-[var(--muted)] hover:text-[var(--text)]"
+            disabled={loading}
+            className="text-[var(--muted)] hover:text-[var(--text)] disabled:opacity-50"
             aria-label="Close"
           >
             ✕
@@ -238,12 +241,20 @@ export function SignInSheet({
                 <span>{copy.auth.adultCheckbox}</span>
               </label>
             ) : null}
-            <Button type="submit" disabled={loading || !credentialsReady}>
+            <BusyButton
+              type="submit"
+              disabled={!credentialsReady}
+              loading={loading}
+              loadingLabel={
+                authMode === "sign-up" ? copy.auth.signingUp : copy.auth.signingIn
+              }
+            >
               {authMode === "sign-up" ? copy.auth.signUp : copy.auth.signIn}
-            </Button>
+            </BusyButton>
             <Button
               type="button"
               variant="ghost"
+              disabled={loading}
               onClick={() => {
                 setAuthMode(authMode === "sign-in" ? "sign-up" : "sign-in");
                 setError(null);
@@ -273,9 +284,13 @@ export function SignInSheet({
               />
               <span>{copy.auth.adultCheckbox}</span>
             </label>
-            <Button onClick={() => void confirmAdult()} disabled={loading}>
+            <BusyButton
+              onClick={() => void confirmAdult()}
+              loading={loading}
+              loadingLabel={copy.auth.working}
+            >
               Continue
-            </Button>
+            </BusyButton>
             <Button
               type="button"
               variant="ghost"
