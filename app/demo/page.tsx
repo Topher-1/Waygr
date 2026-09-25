@@ -14,6 +14,7 @@ type PageProps = {
 
 const viewLabels: Record<ChallengeView, string> = {
   open: "Open",
+  waiting: "Waiting",
   taken: "Taken",
   live: "Live",
   settled: "Settled",
@@ -29,15 +30,23 @@ export default async function DemoPage({ searchParams }: PageProps) {
   const challenge = demoChallenges[view];
 
   const demoViewer: ViewerProfile | null =
-    view === "live" && challenge.opponent
+    view === "waiting"
       ? {
-          id: challenge.opponent.id,
-          handle: challenge.opponent.handle,
-          displayName: challenge.opponent.displayName,
-          avatarUrl: challenge.opponent.avatarUrl,
+          id: challenge.creator.id,
+          handle: challenge.creator.handle,
+          displayName: challenge.creator.displayName,
+          avatarUrl: challenge.creator.avatarUrl,
           adultConfirmedAt: new Date().toISOString(),
         }
-      : null;
+      : view === "live" && challenge.opponent
+        ? {
+            id: challenge.opponent.id,
+            handle: challenge.opponent.handle,
+            displayName: challenge.opponent.displayName,
+            avatarUrl: challenge.opponent.avatarUrl,
+            adultConfirmedAt: new Date().toISOString(),
+          }
+        : null;
 
   return (
     <div className="min-h-screen bg-[var(--bg)]">
