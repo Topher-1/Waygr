@@ -44,40 +44,45 @@ export function ChallengeClient({
   const acceptChallenge = useCallback(async () => {
     setLoading(true);
     setError(null);
-    const res = await fetch(`/api/challenges/${challenge.id}/accept`, {
-      method: "POST",
-    });
-    const body = (await res.json()) as {
-      ok?: boolean;
-      reason?: string;
-    };
-    setLoading(false);
+    try {
+      const res = await fetch(`/api/challenges/${challenge.id}/accept`, {
+        method: "POST",
+      });
+      const body = (await res.json()) as {
+        ok?: boolean;
+        reason?: string;
+      };
 
-    if (res.ok && body.ok) {
-      setAccepted(true);
-      setView("live");
-      router.refresh();
-      return;
+      if (res.ok && body.ok) {
+        setAccepted(true);
+        setView("live");
+        router.refresh();
+        return;
+      }
+
+      if (body.reason === "taken") {
+        setView("taken");
+        return;
+      }
+
+      if (body.reason === "adult_required" || body.reason === "unauthorized") {
+        setSignInMode(
+          body.reason === "adult_required" ? "adult-only" : "sign-in",
+        );
+        setShowSignIn(true);
+        return;
+      }
+
+      setError(
+        body.reason === "own_challenge"
+          ? "You can't accept your own challenge."
+          : body.reason === "game_over"
+            ? "This game is over — can't accept now."
+            : "Could not accept. Try again.",
+      );
+    } finally {
+      setLoading(false);
     }
-
-    if (body.reason === "taken") {
-      setView("taken");
-      return;
-    }
-
-    if (body.reason === "adult_required" || body.reason === "unauthorized") {
-      setSignInMode(body.reason === "adult_required" ? "adult-only" : "sign-in");
-      setShowSignIn(true);
-      return;
-    }
-
-    setError(
-      body.reason === "own_challenge"
-        ? "You can't accept your own challenge."
-        : body.reason === "game_over"
-          ? "This game is over — can't accept now."
-          : "Could not accept. Try again.",
-    );
   }, [challenge.id, router]);
 
   function handleImIn() {

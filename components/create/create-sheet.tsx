@@ -286,52 +286,59 @@ export function CreateSheet({
     setSubmitting(true);
     setError(null);
 
-    const payload: Record<string, unknown> = {
-      gameId,
-      market,
-      creatorPick,
-      forfeitKind: kind,
-      rematchOf,
-    };
-    if (market === "spread" || market === "total") {
-      payload.line = line;
-    }
-    if (market === "quarter_winner") {
-      payload.quarter = quarter;
-    }
-    if (kind === "custom") {
-      payload.forfeitText = text;
-    }
+    try {
+      const payload: Record<string, unknown> = {
+        gameId,
+        market,
+        creatorPick,
+        forfeitKind: kind,
+        rematchOf,
+      };
+      if (market === "spread" || market === "total") {
+        payload.line = line;
+      }
+      if (market === "quarter_winner") {
+        payload.quarter = quarter;
+      }
+      if (kind === "custom") {
+        payload.forfeitText = text;
+      }
 
-    const res = await fetch("/api/challenges", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-    const body = (await res.json()) as { ok?: boolean; slug?: string; reason?: string };
-    setSubmitting(false);
+      const res = await fetch("/api/challenges", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const body = (await res.json()) as {
+        ok?: boolean;
+        slug?: string;
+        reason?: string;
+      };
 
-    if (!res.ok || !body.ok || !body.slug) {
-      setError(
-        body.reason === "game_over"
-          ? "This game is over — pick another."
-          : body.reason === "forfeit_screened"
-            ? copy.screening.rejected
-            : body.reason === "adult_required"
-              ? copy.auth.adultConfirmError
-              : "Could not create. Try again.",
-      );
-      return;
-    }
+      if (!res.ok || !body.ok || !body.slug) {
+        setError(
+          body.reason === "game_over"
+            ? "This game is over — pick another."
+            : body.reason === "forfeit_screened"
+              ? copy.screening.rejected
+              : body.reason === "adult_required"
+                ? copy.auth.adultConfirmError
+                : "Could not create. Try again.",
+        );
+        return;
+      }
 
-    setForfeitKind(kind);
-    if (kind === "custom") {
-      setForfeitText(text);
+      setForfeitKind(kind);
+      if (kind === "custom") {
+        setForfeitText(text);
+      }
+      localStorage.setItem(LAST_FORFEIT_KEY, kind);
+      setCreatedSlug(body.slug);
+      setStep("preview");
+      onCreated?.(body.slug);
+    } finally {
+      setSubmitting(false);
     }
-    localStorage.setItem(LAST_FORFEIT_KEY, kind);
-    setCreatedSlug(body.slug);
-    setStep("preview");
-    onCreated?.(body.slug);
   }
 
   function togglePreset(preset: ForfeitPreset) {

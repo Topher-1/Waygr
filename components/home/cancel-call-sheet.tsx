@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { copy } from "@/lib/copy";
 import { Button } from "@/components/ui/button";
+import { BusyButton } from "@/components/ui/busy-button";
 
 type CancelCallSheetProps = {
   open: boolean;
@@ -31,6 +32,7 @@ export function CancelCallSheet({
       await onConfirm();
     } catch {
       setError(copy.home.cancelCallError);
+    } finally {
       setLoading(false);
     }
   }
@@ -68,14 +70,15 @@ export function CancelCallSheet({
         ) : null}
 
         <div className="flex flex-col gap-2">
-          <Button
+          <BusyButton
             variant="primary"
             className="w-full"
-            disabled={loading}
+            loading={loading}
+            loadingLabel={copy.home.cancelCallWorking}
             onClick={() => void handleConfirm()}
           >
-            {loading ? copy.home.cancelCallWorking : copy.home.cancelCallConfirm}
-          </Button>
+            {copy.home.cancelCallConfirm}
+          </BusyButton>
           <Button
             variant="secondary"
             className="w-full"

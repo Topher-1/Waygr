@@ -76,50 +76,49 @@ export function SignInSheet({
     setLoading(true);
     setError(null);
 
-    const result =
-      authMode === "sign-up"
-        ? await supabase.auth.signUp({ email, password })
-        : await supabase.auth.signInWithPassword({ email, password });
+    try {
+      const result =
+        authMode === "sign-up"
+          ? await supabase.auth.signUp({ email, password })
+          : await supabase.auth.signInWithPassword({ email, password });
 
-    if (result.error) {
-      setLoading(false);
-      const mapped = mapAuthError(result.error.message);
-      if (mapped.suggestSignIn) {
-        setError(copy.auth.alreadyRegistered);
+      if (result.error) {
+        const mapped = mapAuthError(result.error.message);
+        if (mapped.suggestSignIn) {
+          setError(copy.auth.alreadyRegistered);
+          setAuthMode("sign-in");
+          return;
+        }
+        setError(mapped.text);
+        return;
+      }
+
+      if (authMode === "sign-up" && result.data.user && !result.data.session) {
+        setError("Check your email to confirm your account, then sign in.");
         setAuthMode("sign-in");
         return;
       }
-      setError(mapped.text);
-      return;
-    }
 
-    if (authMode === "sign-up" && result.data.user && !result.data.session) {
-      setLoading(false);
-      setError("Check your email to confirm your account, then sign in.");
-      setAuthMode("sign-in");
-      return;
-    }
-
-    const needsAdult = await setupProfile();
-    if (needsAdult) {
-      if (authMode === "sign-up" && adultChecked) {
-        const confirmed = await persistAdultConfirmation();
-        setLoading(false);
-        if (!confirmed) {
+      const needsAdult = await setupProfile();
+      if (needsAdult) {
+        if (authMode === "sign-up" && adultChecked) {
+          const confirmed = await persistAdultConfirmation();
+          if (!confirmed) {
+            return;
+          }
+          onComplete();
+          onClose();
           return;
         }
-        onComplete();
-        onClose();
+        setStep("adult");
         return;
       }
-      setLoading(false);
-      setStep("adult");
-      return;
-    }
 
-    setLoading(false);
-    onComplete();
-    onClose();
+      onComplete();
+      onClose();
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function confirmAdult() {
@@ -129,24 +128,30 @@ export function SignInSheet({
     }
     setLoading(true);
     setError(null);
-    const confirmed = await persistAdultConfirmation();
-    setLoading(false);
-    if (!confirmed) {
-      return;
+    try {
+      const confirmed = await persistAdultConfirmation();
+      if (!confirmed) {
+        return;
+      }
+      onComplete();
+      onClose();
+    } finally {
+      setLoading(false);
     }
-    onComplete();
-    onClose();
   }
 
   async function handleSignOutFromAdult() {
     setLoading(true);
     setError(null);
-    await supabase.auth.signOut();
-    setLoading(false);
-    setStep("credentials");
-    setAuthMode("sign-in");
-    setAdultChecked(false);
-    setError(copy.auth.adultAbandonMessage);
+    try {
+      await supabase.auth.signOut();
+      setStep("credentials");
+      setAuthMode("sign-in");
+      setAdultChecked(false);
+      setError(copy.auth.adultAbandonMessage);
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function handleClose() {
