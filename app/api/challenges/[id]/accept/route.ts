@@ -33,7 +33,7 @@ export async function POST(_request: Request, context: RouteContext) {
       state,
       creator_id,
       opponent_id,
-      game:games ( starts_at )
+      game:games ( status )
     `,
     )
     .eq("id", challengeId)
@@ -43,24 +43,22 @@ export async function POST(_request: Request, context: RouteContext) {
     return NextResponse.json({ ok: false, reason: "not_found" }, { status: 404 });
   }
 
-  const gameRow = challenge.game as { starts_at: string } | { starts_at: string }[];
+  const gameRow = challenge.game as { status: string } | { status: string }[];
   const game = Array.isArray(gameRow) ? gameRow[0] : gameRow;
-  if (!game?.starts_at) {
+  if (!game?.status) {
     return NextResponse.json({ ok: false, reason: "not_found" }, { status: 404 });
   }
-  const kickoffAt = new Date(game.starts_at);
   const now = new Date();
 
   const validation = validateAccept({
     challengeState: challenge.state,
     creatorId: challenge.creator_id,
     opponentId: challenge.opponent_id,
-    kickoffAt,
+    gameStatus: game.status,
     actorProfileId: profile.id,
     adultConfirmedAt: profile.adultConfirmedAt
       ? new Date(profile.adultConfirmedAt)
       : null,
-    now,
   });
 
   if (!validation.ok) {

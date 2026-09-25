@@ -4,7 +4,7 @@ const SEVENTY_TWO_HOURS_MS = 72 * 60 * 60 * 1000;
 
 export interface SweepStore {
   now(): Date;
-  listOpenChallengesPastKickoff(now: Date): Promise<ChallengeRow[]>;
+  listOpenChallengesOnTerminalGames(): Promise<ChallengeRow[]>;
   listChallengesOnVoidGames(): Promise<{ challenge: ChallengeRow; game: GameRow }[]>;
   listProofsPendingAutoConfirm(): Promise<{ forfeitId: string; submittedAt: string }[]>;
   listExpiredJerseyProfiles(now: Date): Promise<{ profileId: string }[]>;
@@ -23,7 +23,7 @@ export async function runSweep(store: SweepStore): Promise<SweepResult> {
     jerseysEnded: 0,
   };
 
-  for (const challenge of await store.listOpenChallengesPastKickoff(now)) {
+  for (const challenge of await store.listOpenChallengesOnTerminalGames()) {
     if (await store.expireChallenge(challenge.id)) result.expired++;
   }
 

@@ -1,6 +1,5 @@
 import { screenCustomForfeit } from "@/lib/forfeit-screen";
-
-export const KICKOFF_LOCK_MS = 2 * 60 * 1000;
+import { isGameOpenable } from "@/lib/games/openable";
 
 export type Market = "winner" | "spread" | "total" | "half_leader" | "quarter_winner";
 export type Pick = "home" | "away" | "over" | "under";
@@ -20,8 +19,7 @@ export type CreateChallengeInput = {
 export type CreateRejectReason =
   | "unauthorized"
   | "adult_required"
-  | "kickoff_soon"
-  | "past_kickoff"
+  | "game_over"
   | "invalid_market"
   | "invalid_pick"
   | "line_required"
@@ -32,8 +30,7 @@ export type CreateRejectReason =
   | "game_not_found";
 
 export type CreateValidationContext = {
-  kickoffAt: Date;
-  now: Date;
+  gameStatus: string;
   adultConfirmedAt: Date | null;
 };
 
@@ -62,12 +59,8 @@ export function validateCreate(
     return { ok: false, reason: "adult_required" };
   }
 
-  const msUntilKickoff = context.kickoffAt.getTime() - context.now.getTime();
-  if (msUntilKickoff <= 0) {
-    return { ok: false, reason: "past_kickoff" };
-  }
-  if (msUntilKickoff < KICKOFF_LOCK_MS) {
-    return { ok: false, reason: "kickoff_soon" };
+  if (!isGameOpenable(context.gameStatus)) {
+    return { ok: false, reason: "game_over" };
   }
 
   const gameId = typeof body.gameId === "string" ? body.gameId : "";

@@ -297,7 +297,7 @@ export class SupabaseJobStore implements PollScoresStore, SettleStore, SweepStor
     return data?.abbr ?? teamCode.split(':')[1] ?? teamCode;
   }
 
-  async listOpenChallengesPastKickoff(now: Date): Promise<ChallengeRow[]> {
+  async listOpenChallengesOnTerminalGames(): Promise<ChallengeRow[]> {
     const { data: open, error: openError } = await this.supabase
       .from('challenges')
       .select('*')
@@ -307,7 +307,7 @@ export class SupabaseJobStore implements PollScoresStore, SettleStore, SweepStor
     const rows: ChallengeRow[] = [];
     for (const row of (open as DbChallenge[]) ?? []) {
       const game = await this.getGame(row.game_id);
-      if (game && new Date(game.startsAt) <= now) {
+      if (game && game.status !== 'scheduled' && game.status !== 'live') {
         rows.push(mapChallenge(row));
       }
     }

@@ -25,7 +25,7 @@ export async function POST(request: Request) {
 
   const { data: game, error: gameError } = await service
     .from("games")
-    .select("id, starts_at")
+    .select("id, status")
     .eq("id", body.gameId as string)
     .maybeSingle();
 
@@ -34,8 +34,7 @@ export async function POST(request: Request) {
   }
 
   const validation = validateCreate(body, {
-    kickoffAt: new Date(game.starts_at),
-    now: new Date(),
+    gameStatus: game.status,
     adultConfirmedAt: profile.adultConfirmedAt
       ? new Date(profile.adultConfirmedAt)
       : null,

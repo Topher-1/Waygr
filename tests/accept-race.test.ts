@@ -9,10 +9,9 @@ describe("accept validation", () => {
     challengeState: "open",
     creatorId: "creator",
     opponentId: null as string | null,
-    kickoffAt: new Date(Date.now() + 60_000),
+    gameStatus: "live",
     actorProfileId: "opponent",
     adultConfirmedAt: new Date(),
-    now: new Date(),
   };
 
   it("rejects own challenge", () => {
@@ -23,12 +22,20 @@ describe("accept validation", () => {
     expect(result).toEqual({ ok: false, reason: "own_challenge" });
   });
 
-  it("rejects after kickoff", () => {
+  it("allows accept during a live game", () => {
     const result = validateAccept({
       ...base,
-      kickoffAt: new Date(Date.now() - 1_000),
+      gameStatus: "live",
     });
-    expect(result).toEqual({ ok: false, reason: "past_kickoff" });
+    expect(result).toEqual({ ok: true });
+  });
+
+  it("rejects when game is final", () => {
+    const result = validateAccept({
+      ...base,
+      gameStatus: "final",
+    });
+    expect(result).toEqual({ ok: false, reason: "game_over" });
   });
 
   it("rejects without adult confirmation", () => {
@@ -50,8 +57,6 @@ describe("accept validation", () => {
 
 describe("accept race", () => {
   it("allows exactly one winner when two tap at once", () => {
-    const now = new Date();
-    const kickoff = new Date(now.getTime() + 3600_000);
     const adult = new Date();
 
     const { winner, losers } = simulateAcceptRace(
@@ -63,9 +68,8 @@ describe("accept race", () => {
         state: "open",
         creatorId: "creator",
         opponentId: null,
-        kickoffAt: kickoff,
+        gameStatus: "live",
       },
-      now,
     );
 
     expect(winner).toBe("alice");

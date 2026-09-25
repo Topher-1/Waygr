@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { resolveChallengeView } from "@/lib/challenges/views";
+import { resolveChallengeView, voidReason } from "@/lib/challenges/views";
 import type { ChallengeLanding } from "@/lib/challenges/types";
 
 function makeChallenge(
@@ -99,7 +99,7 @@ describe("resolveChallengeView", () => {
     expect(view).toBe("settled");
   });
 
-  it("shows void for expired open past kickoff", () => {
+  it("shows open for open challenge past kickoff while game is live", () => {
     const past = new Date(Date.now() - 60_000).toISOString();
     const view = resolveChallengeView(
       makeChallenge({
@@ -107,10 +107,26 @@ describe("resolveChallengeView", () => {
         game: {
           ...makeChallenge({ state: "open" }).game,
           startsAt: past,
+          status: "live",
         },
       }),
       null,
     );
+    expect(view).toBe("open");
+  });
+
+  it("shows void for expired challenge state", () => {
+    const view = resolveChallengeView(
+      makeChallenge({ state: "expired" }),
+      null,
+    );
     expect(view).toBe("void");
+  });
+});
+
+describe("voidReason", () => {
+  it("returns expired only for expired challenge state", () => {
+    expect(voidReason(makeChallenge({ state: "expired" }))).toBe("expired");
+    expect(voidReason(makeChallenge({ state: "open" }))).toBe("void");
   });
 });

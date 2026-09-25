@@ -1,13 +1,13 @@
 import type { AcceptRejectReason } from "@/lib/challenges/types";
+import { isGameOpenable } from "@/lib/games/openable";
 
 export type AcceptValidationInput = {
   challengeState: string;
   creatorId: string;
   opponentId: string | null;
-  kickoffAt: Date;
+  gameStatus: string;
   actorProfileId: string;
   adultConfirmedAt: Date | null;
-  now: Date;
 };
 
 export type AcceptValidationResult =
@@ -26,8 +26,8 @@ export function validateAccept(
     return { ok: false, reason: "own_challenge" };
   }
 
-  if (input.kickoffAt <= input.now) {
-    return { ok: false, reason: "past_kickoff" };
+  if (!isGameOpenable(input.gameStatus)) {
+    return { ok: false, reason: "game_over" };
   }
 
   if (input.challengeState !== "open") {
@@ -53,9 +53,8 @@ export function simulateAcceptRace(
     state: string;
     creatorId: string;
     opponentId: string | null;
-    kickoffAt: Date;
+    gameStatus: string;
   },
-  now: Date,
 ): { winner: string | null; losers: string[] } {
   let opponentId: string | null = challenge.opponentId;
   let state = challenge.state;
@@ -67,10 +66,9 @@ export function simulateAcceptRace(
       challengeState: state,
       creatorId: challenge.creatorId,
       opponentId,
-      kickoffAt: challenge.kickoffAt,
+      gameStatus: challenge.gameStatus,
       actorProfileId: attempt.profileId,
       adultConfirmedAt: attempt.adultConfirmedAt,
-      now,
     });
 
     if (!result.ok) {

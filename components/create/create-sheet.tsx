@@ -310,8 +310,8 @@ export function CreateSheet({
 
     if (!res.ok || !body.ok || !body.slug) {
       setError(
-        body.reason === "kickoff_soon"
-          ? "Kickoff is under 2 minutes away."
+        body.reason === "game_over"
+          ? "This game is over — pick another."
           : body.reason === "forfeit_screened"
             ? copy.screening.rejected
             : body.reason === "adult_required"
