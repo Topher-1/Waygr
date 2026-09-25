@@ -68,5 +68,18 @@ describe("resolveTeamInfo", () => {
     const unknown = resolveTeamInfo("nfl:ZZZ");
     expect(unknown.primaryColor).toMatch(/^#/);
     expect(unknown.abbr).toBe("ZZZ");
+    expect(unknown.name).toBe("ZZZ");
+  });
+
+  it("names Panthers and Browns so CAR and CLE are not the display name", () => {
+    expect(resolveTeamInfo("nfl:CAR")).toMatchObject({
+      abbr: "CAR",
+      name: "Panthers",
+    });
+    expect(resolveTeamInfo("nfl:CLE")).toMatchObject({
+      abbr: "CLE",
+      name: "Browns",
+    });
+    expect(resolveTeamInfo("nfl:ARI").name).toBe("Cardinals");
   });
 });
