@@ -167,8 +167,26 @@ describe("brand link preview assets", () => {
     expect(cream).toBe(0);
     expect(orange).toBeGreaterThan(20_000);
     // Full word spans most of the right panel, including descender height.
-    expect(maxX - minX).toBeGreaterThan(400);
-    expect((maxY - minY) / (maxX - minX)).toBeGreaterThan(0.35);
+    const span = maxX - minX;
+    expect(span).toBeGreaterThan(400);
+    expect((maxY - minY) / span).toBeGreaterThan(0.35);
+
+    // Upright Waygr: y/g descenders are the lowest ink, not the W or the r.
+    let leftBottom = 0;
+    let midBottom = 0;
+    let rightBottom = 0;
+    for (let y = minY; y <= maxY; y++) {
+      for (let x = minX; x <= maxX; x++) {
+        const p = pixel(home, x, y);
+        if (!(p[0] > 200 && p[1] > 70 && p[1] < 130 && p[2] < 60)) continue;
+        const t = (x - minX) / span;
+        if (t < 0.25) leftBottom = Math.max(leftBottom, y);
+        else if (t >= 0.35 && t < 0.75) midBottom = Math.max(midBottom, y);
+        else if (t >= 0.85) rightBottom = Math.max(rightBottom, y);
+      }
+    }
+    expect(midBottom).toBeGreaterThan(leftBottom + 20);
+    expect(midBottom).toBeGreaterThan(rightBottom + 20);
   });
 
   it("keeps the challenge share card as the matchup layout", () => {
