@@ -1,23 +1,12 @@
 import type { ChallengeLandingGame } from "@/lib/challenges/types";
 import { copy } from "@/lib/copy";
+import { formatLiveLabel } from "@/lib/games/live-label";
 
 type ScoreStripProps = {
   game: ChallengeLandingGame;
   stale?: boolean;
   loading?: boolean;
 };
-
-function liveLabel(game: ChallengeLandingGame): string | null {
-  if (game.status !== "live") {
-    return null;
-  }
-  const period = game.period ? `Q${game.period}` : null;
-  const clock = game.clock ?? null;
-  if (period && clock) {
-    return `${period} ${clock}`;
-  }
-  return period ?? clock ?? "LIVE";
-}
 
 function hasVisibleScores(game: ChallengeLandingGame): boolean {
   return (
@@ -48,7 +37,7 @@ export function ScoreStrip({ game, stale = false, loading = false }: ScoreStripP
     );
   }
 
-  const midLabel = liveLabel(game);
+  const midLabel = formatLiveLabel(game);
 
   return (
     <div className="space-y-2">
