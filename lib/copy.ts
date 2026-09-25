@@ -80,7 +80,9 @@ export const copy = {
       `Auto-confirms in ${hours} h if they don't look.`,
     proofReview: "Confirm the forfeit",
     confirmProof: "Looks good",
+    confirmingProof: "Confirming…",
     rejectProof: "Not good enough",
+    rejectingProof: "Sending back…",
     proofRejected: "They sent it back. Try again.",
     proofConfirmed: "Confirmed. Square again.",
     honorMarkReview: (name: string) => `${name} says it's done.`,
@@ -150,6 +152,7 @@ export const copy = {
   home: {
     empty: (game: string) => `No waygrs yet. ${game}. Make one.`,
     makeCall: "Make a call",
+    viewProfile: "Profile & record",
     live: "Live now",
     owed: "You owe",
     waiting: "Waiting on someone",

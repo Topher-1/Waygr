@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { copy } from "@/lib/copy";
-import { Button } from "@/components/ui/button";
+import { BusyButton } from "@/components/ui/busy-button";
 import { ChallengeShell } from "@/components/challenge/challenge-shell";
 import {
   formatCall,
@@ -52,14 +52,15 @@ export function ForfeitClient({
 }: ForfeitClientProps) {
   const router = useRouter();
   const [status, setStatus] = useState<ForfeitStatus>(forfeit.status);
-  const [busy, setBusy] = useState(false);
+  const [busyLabel, setBusyLabel] = useState<string | null>(null);
+  const busy = busyLabel !== null;
   const [note, setNote] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const forfeitText = formatForfeit(challenge);
 
   async function handleShare(format: "post" | "story") {
-    setBusy(true);
+    setBusyLabel(copy.forfeit.sharing);
     setError(null);
     setNote(copy.forfeit.sharing);
 
@@ -75,7 +76,7 @@ export function ForfeitClient({
     });
 
     if (!shareCounts(result)) {
-      setBusy(false);
+      setBusyLabel(null);
       setNote(null);
       if (result === "failed") {
         setError(copy.forfeit.shareFailed);
@@ -86,7 +87,7 @@ export function ForfeitClient({
     const res = await fetch(`/api/forfeits/${forfeit.id}/paid`, {
       method: "POST",
     });
-    setBusy(false);
+    setBusyLabel(null);
 
     if (res.ok) {
       setStatus("proof_submitted");
@@ -100,12 +101,12 @@ export function ForfeitClient({
   }
 
   async function handleMarkDone() {
-    setBusy(true);
+    setBusyLabel(copy.forfeit.markingDone);
     setError(null);
     const res = await fetch(`/api/forfeits/${forfeit.id}/paid`, {
       method: "POST",
     });
-    setBusy(false);
+    setBusyLabel(null);
 
     if (res.ok) {
       setStatus("proof_submitted");
@@ -130,7 +131,7 @@ export function ForfeitClient({
       return;
     }
 
-    setBusy(true);
+    setBusyLabel(copy.forfeit.uploadingProof);
     setNote(copy.forfeit.uploadingProof);
 
     const signRes = await fetch(`/api/forfeits/${forfeit.id}/proof`, {
@@ -151,7 +152,7 @@ export function ForfeitClient({
     };
 
     if (!signRes.ok || !signed.ok || !signed.uploadUrl || !signed.path) {
-      setBusy(false);
+      setBusyLabel(null);
       setNote(null);
       setError(
         signed.reason === "size"
@@ -170,7 +171,7 @@ export function ForfeitClient({
     }).catch(() => null);
 
     if (!upload?.ok) {
-      setBusy(false);
+      setBusyLabel(null);
       setNote(null);
       setError(copy.forfeit.proofFailed);
       return;
@@ -182,7 +183,7 @@ export function ForfeitClient({
       body: JSON.stringify({ action: "submit", path: signed.path }),
     });
 
-    setBusy(false);
+    setBusyLabel(null);
 
     if (!submit.ok) {
       setNote(null);
@@ -196,12 +197,16 @@ export function ForfeitClient({
   }
 
   async function handleReview(action: "confirm" | "reject") {
-    setBusy(true);
+    setBusyLabel(
+      action === "confirm"
+        ? copy.forfeit.confirmingProof
+        : copy.forfeit.rejectingProof,
+    );
     setError(null);
     const res = await fetch(`/api/forfeits/${forfeit.id}/${action}`, {
       method: "POST",
     });
-    setBusy(false);
+    setBusyLabel(null);
 
     if (!res.ok) {
       setError(copy.forfeit.proofFailed);
@@ -264,21 +269,25 @@ export function ForfeitClient({
         <section className="space-y-3">
           {forfeit.kind === "concession" ? (
             <>
-              <Button
+              <BusyButton
                 className="w-full"
+                loading={busy}
+                loadingLabel={busyLabel ?? copy.forfeit.sharing}
                 disabled={busy}
                 onClick={() => void handleShare("post")}
               >
                 {copy.forfeit.shareConcession}
-              </Button>
-              <Button
+              </BusyButton>
+              <BusyButton
                 variant="secondary"
                 className="w-full"
+                loading={busy}
+                loadingLabel={busyLabel ?? copy.forfeit.sharing}
                 disabled={busy}
                 onClick={() => void handleShare("story")}
               >
                 {copy.forfeit.shareStory}
-              </Button>
+              </BusyButton>
             </>
           ) : null}
 
@@ -314,14 +323,16 @@ export function ForfeitClient({
 
           {forfeit.kind === "concession" ? (
             <>
-              <Button
+              <BusyButton
                 variant="ghost"
                 className="w-full"
+                loading={busy}
+                loadingLabel={busyLabel ?? copy.forfeit.markingDone}
                 disabled={busy}
                 onClick={() => void handleMarkDone()}
               >
                 {copy.forfeit.markDone}
-              </Button>
+              </BusyButton>
               <p className="text-xs text-[var(--muted)]">
                 {copy.forfeit.honorNote}
               </p>
@@ -365,21 +376,25 @@ export function ForfeitClient({
                   {copy.forfeit.honorMarkReview(forfeit.owedByName)}
                 </p>
               )}
-              <Button
+              <BusyButton
                 className="w-full"
+                loading={busy}
+                loadingLabel={busyLabel ?? copy.forfeit.confirmingProof}
                 disabled={busy}
                 onClick={() => void handleReview("confirm")}
               >
                 {copy.forfeit.confirmProof}
-              </Button>
-              <Button
+              </BusyButton>
+              <BusyButton
                 variant="secondary"
                 className="w-full"
+                loading={busy}
+                loadingLabel={busyLabel ?? copy.forfeit.rejectingProof}
                 disabled={busy}
                 onClick={() => void handleReview("reject")}
               >
                 {copy.forfeit.rejectProof}
-              </Button>
+              </BusyButton>
               {autoConfirmHours !== null ? (
                 <p className="text-xs text-[var(--muted)]">
                   {copy.forfeit.proofAutoConfirm(autoConfirmHours)}

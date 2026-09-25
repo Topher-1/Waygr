@@ -138,11 +138,21 @@ export function HomeClient({ viewer, feed }: HomeClientProps) {
   return (
     <>
       <main className="mx-auto flex min-h-screen max-w-lg flex-col px-4 pb-28 pt-6">
-        <h1
-          className="mb-6 font-[family-name:var(--font-barlow)] text-3xl font-extrabold italic text-[var(--orange-strong)]"
-        >
-          {copy.appName}
-        </h1>
+        <div className="mb-6 flex items-start justify-between gap-4">
+          <h1
+            className="font-[family-name:var(--font-barlow)] text-3xl font-extrabold italic text-[var(--orange-strong)]"
+          >
+            {copy.appName}
+          </h1>
+          {viewer ? (
+            <Link
+              href={`/u/${viewer.handle}`}
+              className="shrink-0 pt-1 text-sm font-semibold text-[var(--orange)] underline-offset-2 hover:underline"
+            >
+              {copy.home.viewProfile}
+            </Link>
+          ) : null}
+        </div>
 
         {!viewer && (
           <p className="mb-6 text-[var(--muted)]">
@@ -197,9 +207,17 @@ export function HomeClient({ viewer, feed }: HomeClientProps) {
 
             {feed.settledWaygrs.length > 0 && (
               <section>
-                <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-[var(--muted)]">
-                  {copy.home.settled}
-                </h2>
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <h2 className="text-sm font-semibold uppercase tracking-wide text-[var(--muted)]">
+                    {copy.home.settled}
+                  </h2>
+                  <Link
+                    href={`/u/${viewer.handle}`}
+                    className="text-xs font-semibold text-[var(--orange)] underline-offset-2 hover:underline"
+                  >
+                    {copy.home.viewProfile}
+                  </Link>
+                </div>
                 <ul className="space-y-2">
                   {feed.settledWaygrs.map((item) => (
                     <li key={item.id}>
