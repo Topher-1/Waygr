@@ -37,6 +37,8 @@ Wordmark + icon SVGs are **outlined path data** (fontTools → pathops). No Goog
 8. Template SVG masters keep editable `<text>` plus outlined wordmark; PNGs are production raster.
 9. Rebuild: `/workspace/waygr/.venv/bin/python /workspace/waygr/brand/_build_assets.py`
 
+10. **Opaque plate (share harden):** all `icon-*.png` + `favicon.ico` use full-bleed `#FF5F1F` (corner α=255). See `PLATE.md`. Does not change wordmark/#26 descenders.
+
 ## Files
 
 - `MANIFEST.md`
