@@ -34,11 +34,9 @@ BEGIN
   RETURNING challenges.* INTO v_challenge;
 
   IF NOT FOUND THEN
-    SELECT c.*, g.status
-    INTO v_challenge, v_game_status
-    FROM challenges c
-    JOIN games g ON g.id = c.game_id
-    WHERE c.id = p_challenge_id;
+    SELECT * INTO v_challenge
+    FROM challenges
+    WHERE id = p_challenge_id;
 
     IF NOT FOUND THEN
       RETURN jsonb_build_object('accepted', false, 'reason', 'not_found');
@@ -55,6 +53,10 @@ BEGIN
     IF v_challenge.state <> 'open' THEN
       RETURN jsonb_build_object('accepted', false, 'reason', 'not_open');
     END IF;
+
+    SELECT g.status INTO v_game_status
+    FROM games g
+    WHERE g.id = v_challenge.game_id;
 
     IF v_game_status NOT IN ('scheduled', 'live') THEN
       RETURN jsonb_build_object('accepted', false, 'reason', 'game_over');
