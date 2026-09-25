@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import {
   WORDMARK_PATH,
   WORDMARK_VIEW_HEIGHT,
@@ -26,5 +28,14 @@ describe("wordmark for OG/share cards", () => {
     // Was 70 px at width 200 with the clipped 782-tall artboard.
     expect(height).toBeGreaterThan(70);
     expect(height).toBe(86);
+  });
+
+  it("flips the font-export path so Satori cards draw Waygr upright", () => {
+    const src = readFileSync(
+      join(process.cwd(), "lib/cards/marks.tsx"),
+      "utf8",
+    );
+    expect(src).toContain("scale(1 -1)");
+    expect(src).toContain("WORDMARK_VIEW_HEIGHT}) scale(1 -1)");
   });
 });

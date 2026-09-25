@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
+import { copy } from "@/lib/copy";
 import {
   PRODUCTION_APP_ORIGIN,
   challengeOgImage,
   challengeOgImagePath,
+  challengePreviewMetadata,
   getMetadataBase,
 } from "@/lib/metadata";
 
@@ -33,5 +35,35 @@ describe("challenge link preview metadata", () => {
       height: 630,
       type: "image/png",
     });
+  });
+
+  it("does not repeat the preview sentence as title and description", () => {
+    const slug = "BzeiDEJ67P";
+    const title = copy.challenge.preview(
+      "totallykewl4u",
+      "CHW wins",
+      "a beer + a jersey swap + For Harboe!!",
+    );
+    const meta = challengePreviewMetadata(title, slug);
+
+    expect(meta.metadataBase).toEqual(getMetadataBase());
+    expect(meta.openGraph?.title).toBe(title);
+    expect(meta.openGraph?.images).toEqual([challengeOgImage(slug)]);
+
+    const descriptions = [
+      meta.description,
+      meta.openGraph?.description,
+      meta.twitter &&
+      typeof meta.twitter === "object" &&
+      "description" in meta.twitter
+        ? meta.twitter.description
+        : undefined,
+    ];
+
+    for (const description of descriptions) {
+      if (typeof description === "string") {
+        expect(description).not.toBe(title);
+      }
+    }
   });
 });

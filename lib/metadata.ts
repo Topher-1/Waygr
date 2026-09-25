@@ -1,3 +1,5 @@
+import type { Metadata } from "next";
+
 /** Public production origin — link previews and metadata must use this host. */
 export const PRODUCTION_APP_ORIGIN = "https://waygr.vercel.app";
 
@@ -22,5 +24,27 @@ export function challengeOgImage(slug: string) {
     width: OG_IMAGE_SIZE.width,
     height: OG_IMAGE_SIZE.height,
     type: "image/png",
+  };
+}
+
+/** Challenge /c/[slug] metadata: hook in title only (WhatsApp shows title + description). */
+export function challengePreviewMetadata(title: string, slug: string): Metadata {
+  const ogImage = challengeOgImage(slug);
+
+  return {
+    metadataBase: getMetadataBase(),
+    title,
+    description: null,
+    openGraph: {
+      title,
+      description: null,
+      images: [ogImage],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description: null,
+      images: [ogImage.url],
+    },
   };
 }

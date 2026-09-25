@@ -30,7 +30,10 @@ export function Wordmark({
       aria-label="Waygr"
       style={{ overflow: "visible", display: "flex" }}
     >
-      <path d={WORDMARK_PATH} fill={color} />
+      {/* Font export is Y-up; flip once for SVG / Satori so Waygr reads upright. */}
+      <g transform={`translate(0 ${WORDMARK_VIEW_HEIGHT}) scale(1 -1)`}>
+        <path d={WORDMARK_PATH} fill={color} />
+      </g>
     </svg>
   );
 }
