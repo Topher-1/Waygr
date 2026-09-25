@@ -56,4 +56,10 @@ describe("accept_challenge_atomic migration", () => {
     expect(sql0009).toMatch(/GRANT EXECUTE ON FUNCTION public\.accept_challenge_atomic/);
     expect(sql0009).toContain("TO service_role");
   });
+
+  it("0009 splits NOT FOUND diagnostics (no ROWTYPE in multi-item INTO)", () => {
+    expect(sql0009).not.toMatch(/INTO v_challenge, v_game_status/);
+    expect(sql0009).toMatch(/SELECT \* INTO v_challenge[\s\S]*FROM challenges[\s\S]*WHERE id = p_challenge_id/);
+    expect(sql0009).toMatch(/SELECT g\.status INTO v_game_status[\s\S]*FROM games g[\s\S]*WHERE g\.id = v_challenge\.game_id/);
+  });
 });
