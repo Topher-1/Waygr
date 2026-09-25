@@ -59,6 +59,7 @@ export const copy = {
     owed: "You owe",
     waiting: "Waiting on someone",
     tonight: "Tonight",
+    tomorrow: "Tomorrow",
     quickCall: "One-tap call",
     howItWorksTitle: "How it works",
     howItWorksSteps: [
@@ -78,6 +79,7 @@ export const copy = {
     preview: "Your call",
     next: "Next",
     share: "Share challenge",
+    linkCopied: "Link copied",
     markets: {
       spread: "Spread",
       winner: "Winner",

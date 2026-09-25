@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { copy } from "@/lib/copy";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,6 +21,7 @@ import {
 } from "@/lib/forfeit-presets";
 import { CustomForfeitChip } from "@/components/create/custom-forfeit-chip";
 import { screenCustomForfeit } from "@/lib/forfeit-screen";
+import { shareChallengeLink } from "@/lib/challenges/share-challenge";
 
 type GameItem = {
   id: string;
@@ -129,6 +131,7 @@ export function CreateSheet({
   quickGameId,
   onCreated,
 }: CreateSheetProps) {
+  const router = useRouter();
   const [games, setGames] = useState<GameItem[]>([]);
   const [loadingGames, setLoadingGames] = useState(false);
   const [step, setStep] = useState<Step>("game");
@@ -147,6 +150,7 @@ export function CreateSheet({
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [createdSlug, setCreatedSlug] = useState<string | null>(null);
+  const [linkCopied, setLinkCopied] = useState(false);
 
   const selectedGame = useMemo(
     () => games.find((g) => g.id === gameId) ?? null,
@@ -180,6 +184,7 @@ export function CreateSheet({
     if (!open) return;
     setError(null);
     setCreatedSlug(null);
+    setLinkCopied(false);
     void loadGames();
   }, [open, loadGames]);
 
@@ -394,20 +399,21 @@ export function CreateSheet({
   async function handleShare() {
     if (!createdSlug) return;
     const url = `${window.location.origin}/c/${createdSlug}`;
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: copy.appName,
-          text: "You're on the line.",
-          url,
-        });
-      } catch {
-        await navigator.clipboard.writeText(url);
-      }
-    } else {
-      await navigator.clipboard.writeText(url);
+    const result = await shareChallengeLink({
+      title: copy.appName,
+      text: "You're on the line.",
+      url,
+    });
+
+    if (result === "shared") {
+      onClose();
+      router.push(`/c/${createdSlug}`);
+      return;
     }
-    onClose();
+
+    if (result === "copied") {
+      setLinkCopied(true);
+    }
   }
 
   const showScreeningError =
@@ -706,6 +712,9 @@ export function CreateSheet({
               >
                 {copy.create.share}
               </Button>
+              {linkCopied ? (
+                <p className="text-sm text-[var(--green)]">{copy.create.linkCopied}</p>
+              ) : null}
             </div>
           )}
         </div>
