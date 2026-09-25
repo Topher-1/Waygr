@@ -1,4 +1,5 @@
 import type { ChallengeLanding } from "@/lib/challenges/types";
+import { APP_TIMEZONE } from "@/lib/constants";
 
 export type CallFormatInput = {
   market: string;
@@ -94,10 +95,11 @@ export function formatMatchup(challenge: ChallengeLanding): string {
   return `${awayTeam.abbr} at ${homeTeam.abbr}`;
 }
 
-/** Kickoff in viewer-local short form (SSR uses UTC; client can reformat). */
+/** Kickoff in app display timezone (America/Chicago). */
 export function formatKickoff(iso: string): string {
   const d = new Date(iso);
-  return d.toLocaleString(undefined, {
+  return d.toLocaleString("en-US", {
+    timeZone: APP_TIMEZONE,
     weekday: "short",
     month: "short",
     day: "numeric",

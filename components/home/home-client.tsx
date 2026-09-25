@@ -68,7 +68,63 @@ export function HomeClient({ viewer, feed }: HomeClientProps) {
     feed.live.length === 0 &&
     feed.owedForfeits.length === 0 &&
     feed.openWaiting.length === 0 &&
-    feed.tonightQuickCalls.length === 0;
+    feed.tonightQuickCalls.length === 0 &&
+    feed.tomorrowQuickCalls.length === 0;
+
+  function renderQuickCallSection(
+    title: string,
+    games: NonNullable<HomeFeed>["tonightQuickCalls"],
+  ) {
+    if (games.length === 0) return null;
+
+    return (
+      <section>
+        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-[var(--muted)]">
+          {title}
+        </h2>
+        <ul className="space-y-2">
+          {games.map((game) => (
+            <li key={game.gameId}>
+              <button
+                type="button"
+                onClick={() =>
+                  openCreate({
+                    gameId: game.gameId,
+                    prefill: {
+                      gameId: game.gameId,
+                      market: game.defaultMarket,
+                      creatorPick: game.defaultPick,
+                      line: game.defaultLine,
+                      forfeitKind: "concession",
+                    },
+                  })
+                }
+                className="flex w-full items-center gap-3 rounded-xl border border-[var(--border)] bg-[var(--raised)] px-4 py-3 text-left"
+              >
+                <span
+                  className="h-6 w-1 rounded-full"
+                  style={{ background: game.awayColor }}
+                />
+                <span
+                  className="h-6 w-1 rounded-full"
+                  style={{ background: game.homeColor }}
+                />
+                <div className="flex-1">
+                  <p className="font-semibold">{game.label}</p>
+                  <p className="text-xs text-[var(--muted)]">
+                    {game.league.toUpperCase()} · {formatKickoff(game.startsAt)}
+                  </p>
+                </div>
+                <span className="text-xs font-semibold text-[var(--orange)]">
+                  {copy.home.quickCall}
+                </span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      </section>
+    );
+  }
 
   return (
     <>
@@ -160,53 +216,8 @@ export function HomeClient({ viewer, feed }: HomeClientProps) {
               </section>
             )}
 
-            {feed.tonightQuickCalls.length > 0 && (
-              <section>
-                <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-[var(--muted)]">
-                  {copy.home.tonight}
-                </h2>
-                <ul className="space-y-2">
-                  {feed.tonightQuickCalls.map((game) => (
-                    <li key={game.gameId}>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          openCreate({
-                            gameId: game.gameId,
-                            prefill: {
-                              gameId: game.gameId,
-                              market: game.defaultMarket,
-                              creatorPick: game.defaultPick,
-                              line: game.defaultLine,
-                              forfeitKind: "concession",
-                            },
-                          })
-                        }
-                        className="flex w-full items-center gap-3 rounded-xl border border-[var(--border)] bg-[var(--raised)] px-4 py-3 text-left"
-                      >
-                        <span
-                          className="h-6 w-1 rounded-full"
-                          style={{ background: game.awayColor }}
-                        />
-                        <span
-                          className="h-6 w-1 rounded-full"
-                          style={{ background: game.homeColor }}
-                        />
-                        <div className="flex-1">
-                          <p className="font-semibold">{game.label}</p>
-                          <p className="text-xs text-[var(--muted)]">
-                            {game.league.toUpperCase()} · {formatKickoff(game.startsAt)}
-                          </p>
-                        </div>
-                        <span className="text-xs font-semibold text-[var(--orange)]">
-                          {copy.home.quickCall}
-                        </span>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            )}
+            {renderQuickCallSection(copy.home.tonight, feed.tonightQuickCalls)}
+            {renderQuickCallSection(copy.home.tomorrow, feed.tomorrowQuickCalls)}
 
             {feedIsEmpty ? (
               <div className="flex flex-col gap-6">

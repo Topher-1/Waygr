@@ -4,6 +4,7 @@ import type { ChallengeLanding } from "@/lib/challenges/types";
 import { createServiceClient } from "@/lib/supabase/service";
 import type { ViewerProfile } from "@/lib/auth/profile";
 import { listGamesForCreate } from "@/lib/games/sync";
+import { partitionHomeQuickCalls } from "@/lib/time/local-slate";
 import { defaultLine, type Market } from "@/lib/challenges/create";
 
 export type HomeLiveChallenge = ChallengeLanding & { view: "live" };
@@ -37,14 +38,14 @@ export type HomeFeed = {
   owedForfeits: HomeOwedForfeit[];
   openWaiting: HomeOpenChallenge[];
   tonightQuickCalls: TonightQuickCall[];
+  tomorrowQuickCalls: TonightQuickCall[];
 };
 
 /** Home feed for signed-in user (BUILD ordering). */
 export async function getHomeFeed(viewer: ViewerProfile): Promise<HomeFeed> {
   const service = createServiceClient();
   const now = new Date();
-  const tonightEnd = new Date(now);
-  tonightEnd.setHours(23, 59, 59, 999);
+  const fetchThrough = new Date(now.getTime() + 48 * 3600_000);
 
   const challengeSelect = `
     id, slug, state, market, creator_pick, line, quarter,
@@ -119,15 +120,14 @@ export async function getHomeFeed(viewer: ViewerProfile): Promise<HomeFeed> {
     {
       league: null,
       from: now,
-      to:
-        tonightEnd.getTime() > now.getTime()
-          ? tonightEnd
-          : new Date(now.getTime() + 24 * 3600_000),
+      to: fetchThrough,
     },
     { sync: true },
   );
 
-  const tonightQuickCalls: TonightQuickCall[] = games.slice(0, 6).map((game) => ({
+  const { tonight, tomorrow } = partitionHomeQuickCalls(games, now);
+
+  const toQuickCall = (game: (typeof games)[number]): TonightQuickCall => ({
     gameId: game.id,
     label: `${game.awayTeam.abbr} at ${game.homeTeam.abbr}`,
     league: game.league,
@@ -139,9 +139,12 @@ export async function getHomeFeed(viewer: ViewerProfile): Promise<HomeFeed> {
     defaultMarket: "spread",
     defaultPick: "home",
     defaultLine: defaultLine("spread"),
-  }));
+  });
 
-  return { live, owedForfeits, openWaiting, tonightQuickCalls };
+  const tonightQuickCalls = tonight.slice(0, 6).map(toQuickCall);
+  const tomorrowQuickCalls = tomorrow.slice(0, 6).map(toQuickCall);
+
+  return { live, owedForfeits, openWaiting, tonightQuickCalls, tomorrowQuickCalls };
 }
 
 export function formatHomeForfeitLine(item: HomeOwedForfeit): string {
