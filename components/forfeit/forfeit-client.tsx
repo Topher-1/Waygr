@@ -312,16 +312,21 @@ export function ForfeitClient({
             </div>
           ) : null}
 
-          <Button
-            variant={forfeit.kind === "concession" ? "ghost" : "primary"}
-            className="w-full"
-            disabled={busy}
-            onClick={() => void handleMarkDone()}
-          >
-            {copy.forfeit.markDone}
-          </Button>
-
-          <p className="text-xs text-[var(--muted)]">{copy.forfeit.honorNote}</p>
+          {forfeit.kind === "concession" ? (
+            <>
+              <Button
+                variant="ghost"
+                className="w-full"
+                disabled={busy}
+                onClick={() => void handleMarkDone()}
+              >
+                {copy.forfeit.markDone}
+              </Button>
+              <p className="text-xs text-[var(--muted)]">
+                {copy.forfeit.honorNote}
+              </p>
+            </>
+          ) : null}
         </section>
       ) : null}
 

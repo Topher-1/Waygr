@@ -50,11 +50,16 @@ describe("forfeit permissions", () => {
     ).toBe(false);
   });
 
-  it("lets the loser mark honor-system done while owed (not jersey)", () => {
-    expect(canMarkDone(forfeit, "loser")).toBe(true);
-    expect(canMarkDone(forfeit, "winner")).toBe(false);
+  it("lets only the loser mark concession honor-system done while owed", () => {
+    expect(canMarkDone({ ...forfeit, kind: "concession" }, "loser")).toBe(true);
+    expect(canMarkDone({ ...forfeit, kind: "concession" }, "winner")).toBe(
+      false,
+    );
     expect(
-      canMarkDone({ ...forfeit, status: "proof_submitted" }, "loser"),
+      canMarkDone(
+        { ...forfeit, kind: "concession", status: "proof_submitted" },
+        "loser",
+      ),
     ).toBe(false);
     expect(
       canMarkDone(
@@ -62,6 +67,11 @@ describe("forfeit permissions", () => {
         "loser",
       ),
     ).toBe(false);
+  });
+
+  it("blocks custom from mark-done — proof upload is the only owed path", () => {
+    expect(canMarkDone(forfeit, "loser")).toBe(false);
+    expect(canSubmitProof(forfeit, "loser")).toBe(true);
   });
 
   it("lets only the loser upload proof, and only while owed", () => {
