@@ -43,6 +43,14 @@ describe("screenCustomForfeit", () => {
       ok: false,
       reason: "payment_rail",
     });
+    expect(screenCustomForfeit("venmo://paycharge?txn=pay")).toEqual({
+      ok: false,
+      reason: "payment_rail",
+    });
+    expect(screenCustomForfeit("send bitcoin")).toEqual({
+      ok: false,
+      reason: "payment_rail",
+    });
   });
 
   it("blocks dangerous terms", () => {

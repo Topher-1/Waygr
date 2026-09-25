@@ -5,6 +5,7 @@ import { getChallengeBySlug } from "@/lib/challenges/queries";
 import { resolveChallengeView } from "@/lib/challenges/views";
 import { formatCall, formatForfeit } from "@/lib/challenges/format";
 import { getViewerProfile } from "@/lib/auth/profile";
+import { getForfeitForChallenge } from "@/lib/forfeits/queries";
 import { copy } from "@/lib/copy";
 
 type PageProps = {
@@ -70,7 +71,32 @@ export default async function ChallengePage({ params }: PageProps) {
   const viewer = await getViewerProfile();
   const view = resolveChallengeView(challenge, viewer?.id ?? null);
 
+  // The settled view needs the forfeit to offer the forfeit action (BUILD · Challenge).
+  const isParticipant =
+    viewer !== null &&
+    (viewer.id === challenge.creator.id || viewer.id === challenge.opponent?.id);
+
+  const forfeit =
+    view === "settled" && isParticipant
+      ? await getForfeitForChallenge(challenge.id).catch(() => null)
+      : null;
+
   return (
-    <ChallengeClient challenge={challenge} view={view} viewer={viewer} />
+    <ChallengeClient
+      challenge={challenge}
+      view={view}
+      viewer={viewer}
+      forfeit={
+        forfeit
+          ? {
+              id: forfeit.id,
+              kind: forfeit.kind,
+              status: forfeit.status,
+              owedBy: forfeit.owedBy,
+              owedTo: forfeit.owedTo,
+            }
+          : null
+      }
+    />
   );
 }

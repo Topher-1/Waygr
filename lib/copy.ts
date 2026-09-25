@@ -10,6 +10,8 @@ export const copy = {
   challenge: {
     preview: (name: string, call: string, forfeit: string) =>
       `${name} says ${call}. Loser ${forfeit}. You in?`,
+    previewForfeit: (forfeit: string) => `Loser ${forfeit}. You in?`,
+    challengedYou: (name: string) => `${name} challenged you`,
     accept: "I'm in",
     accepting: "Working…",
     decline: "Not this one",
@@ -39,12 +41,96 @@ export const copy = {
     void: "Game's off. Challenge voided.",
     rematch: "Tap to rematch",
     rematching: "Working…",
-    share: "Share",
+    share: "Share the card",
+    sharing: "Opening share sheet…",
+    shared: "Card's out.",
   },
 
   forfeit: {
     owed: (name: string) => `You owe ${name} one.`,
     paid: "Paid in full.",
+    title: "The line",
+    settleAction: "Settle the line",
+    viewStatus: "Check forfeit",
+    markDone: "Mark as done",
+    markingDone: "Marking…",
+    owedBy: (name: string) => `${name} owes you one.`,
+    dueBy: (when: string) => `Due ${when}`,
+    honorNote: "Honor system — settle up outside the app.",
+    shareConcession: "Share concession card",
+    shareStory: "Share to story",
+    downloadCard: "Download card",
+    sharing: "Opening share sheet…",
+    shareFailed: "Share didn't finish. Try again.",
+    markedDone: "Marked done. Waiting on them to confirm.",
+    uploadProof: "Upload proof",
+    uploadingProof: "Uploading…",
+    proofHint: "Photo or clip, 30 seconds max.",
+    proofTooBig: "That file's too big. 50 MB max.",
+    proofWrongType: "Photos and short clips only.",
+    proofFailed: "Upload didn't finish. Try again.",
+    proofSubmitted: "Proof's in. Waiting on them.",
+    proofWaiting: (name: string) => `Waiting on ${name} to confirm.`,
+    proofAutoConfirm: (hours: number) =>
+      `Auto-confirms in ${hours} h if they don't look.`,
+    proofReview: "Confirm the forfeit",
+    confirmProof: "Looks good",
+    rejectProof: "Not good enough",
+    proofRejected: "They sent it back. Try again.",
+    proofConfirmed: "Confirmed. Square again.",
+    honorMarkReview: (name: string) => `${name} says it's done.`,
+    jerseyActive: (team: string, days: number) =>
+      `${team} colors for ${days} more ${days === 1 ? "day" : "days"}.`,
+    jerseyDone: "Jersey time's up.",
+    alreadyPaid: "Already square.",
+    noneOwed: "Nothing owed here.",
+    notYours: "That forfeit isn't yours.",
+  },
+
+  cards: {
+    calledHeadline: "Called it.",
+    concessionHeadline: (winner: string) => `${winner} called it.`,
+    proofHeadline: "Paid up.",
+    owesLine: (loser: string, winner: string, forfeit: string) =>
+      `${loser} owes ${winner}: ${forfeit}`,
+    paidLine: (loser: string, winner: string, forfeit: string) =>
+      `${loser} paid ${winner}: ${forfeit}`,
+    rivalryLead: (leader: string, trailer: string, wins: number, losses: number) =>
+      `${leader} leads ${trailer} ${wins}–${losses}`,
+    rivalryEven: (a: string, b: string, wins: number) =>
+      `${a} and ${b} are even ${wins}–${wins}`,
+    footer: "Tap to rematch",
+    final: "Final",
+    live: "Live",
+  },
+
+  profile: {
+    record: "Record",
+    recordValue: (wins: number, losses: number, pushes: number) =>
+      `${wins}-${losses}-${pushes}`,
+    paidRate: "Forfeit paid rate",
+    owes: (count: number) => `Owes ${count}`,
+    owesNone: "Owes nothing",
+    topRivalries: "Top rivalries",
+    noRivalries: "No settled waygrs yet.",
+    viewRivalry: "See the record",
+    notFound: "No one by that handle.",
+    jerseyFrame: (team: string) => `Wearing ${team} colors`,
+    settledHistory: "Recent waygrs",
+    noSettledHistory: "No settled waygrs yet.",
+  },
+
+  rivalryPage: {
+    title: (name: string) => `You vs ${name}`,
+    record: (wins: number, losses: number, pushes: number) =>
+      `${wins}-${losses}-${pushes}`,
+    even: "Dead even.",
+    history: "Every waygr",
+    empty: "Nothing settled between you two yet.",
+    signInNote: "Sign in to see your head-to-head.",
+    youWon: "You called it",
+    theyWon: "They called it",
+    pushed: "Push",
   },
 
   rivalry: {
@@ -57,11 +143,12 @@ export const copy = {
   },
 
   home: {
-    empty: (game: string) => `No calls yet. ${game}. Make one.`,
+    empty: (game: string) => `No waygrs yet. ${game}. Make one.`,
     makeCall: "Make a call",
     live: "Live now",
     owed: "You owe",
     waiting: "Waiting on someone",
+    settled: "Recent waygrs",
     tonight: "Tonight",
     tomorrow: "Tomorrow",
     quickCall: "One-tap call",
@@ -153,7 +240,6 @@ export function allCopyStrings(
     if (typeof value === "string") {
       strings.push(value);
     } else if (typeof value === "function") {
-      // Template functions — check their literal return patterns via source scan in tests
       continue;
     } else if (value && typeof value === "object") {
       strings.push(...allCopyStrings(value as Record<string, unknown>));

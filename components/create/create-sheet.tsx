@@ -433,7 +433,7 @@ export function CreateSheet({
   }
 
   const shareLoadingLabel =
-    typeof navigator !== "undefined" && navigator.share
+    typeof navigator !== "undefined" && "share" in navigator
       ? copy.create.sharing
       : copy.create.copying;
 

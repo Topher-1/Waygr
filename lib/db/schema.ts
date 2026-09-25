@@ -143,6 +143,8 @@ export const challenges = pgTable(
   },
   (t) => [
     index("challenges_game_id_state_idx").on(t.gameId, t.state),
+    index("challenges_settled_creator_idx").on(t.creatorId, t.state, t.settledAt),
+    index("challenges_settled_opponent_idx").on(t.opponentId, t.state, t.settledAt),
     foreignKey({
       name: "challenges_rematch_of_challenges_id_fk",
       columns: [t.rematchOf],
@@ -159,24 +161,33 @@ export const challenges = pgTable(
   ],
 );
 
-export const forfeits = pgTable("forfeits", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  challengeId: uuid("challenge_id")
-    .unique()
-    .notNull()
-    .references(() => challenges.id),
-  owedBy: uuid("owed_by")
-    .notNull()
-    .references(() => profiles.id),
-  owedTo: uuid("owed_to")
-    .notNull()
-    .references(() => profiles.id),
-  kind: forfeitKindEnum("kind").notNull(),
-  status: forfeitStatusEnum("status").notNull().default("owed"),
-  proofPath: text("proof_path"),
-  dueAt: timestamp("due_at", { withTimezone: true }).notNull(),
-  paidAt: timestamp("paid_at", { withTimezone: true }),
-});
+export const forfeits = pgTable(
+  "forfeits",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    challengeId: uuid("challenge_id")
+      .unique()
+      .notNull()
+      .references(() => challenges.id),
+    owedBy: uuid("owed_by")
+      .notNull()
+      .references(() => profiles.id),
+    owedTo: uuid("owed_to")
+      .notNull()
+      .references(() => profiles.id),
+    kind: forfeitKindEnum("kind").notNull(),
+    status: forfeitStatusEnum("status").notNull().default("owed"),
+    proofPath: text("proof_path"),
+    proofSubmittedAt: timestamp("proof_submitted_at", { withTimezone: true }),
+    proofRejectedAt: timestamp("proof_rejected_at", { withTimezone: true }),
+    dueAt: timestamp("due_at", { withTimezone: true }).notNull(),
+    paidAt: timestamp("paid_at", { withTimezone: true }),
+  },
+  (t) => [
+    index("forfeits_owed_by_status_idx").on(t.owedBy, t.status),
+    index("forfeits_owed_to_status_idx").on(t.owedTo, t.status),
+  ],
+);
 
 export const messages = pgTable(
   "messages",
