@@ -33,6 +33,12 @@ export function resolveChallengeView(
 
   if (challenge.state === "open") {
     if (
+      viewerProfileId !== null &&
+      viewerProfileId === challenge.creator.id
+    ) {
+      return "waiting";
+    }
+    if (
       challenge.opponent !== null &&
       viewerProfileId !== challenge.opponent.id
     ) {

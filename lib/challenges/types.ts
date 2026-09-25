@@ -1,5 +1,6 @@
 export type ChallengeView =
   | "open"
+  | "waiting"
   | "taken"
   | "live"
   | "settled"

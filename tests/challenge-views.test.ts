@@ -59,6 +59,22 @@ describe("resolveChallengeView", () => {
     expect(view).toBe("open");
   });
 
+  it("shows waiting when creator views their own open challenge", () => {
+    const view = resolveChallengeView(
+      makeChallenge({ state: "open" }),
+      "creator",
+    );
+    expect(view).toBe("waiting");
+  });
+
+  it("shows open when non-creator views an open challenge", () => {
+    const view = resolveChallengeView(
+      makeChallenge({ state: "open" }),
+      "someone-else",
+    );
+    expect(view).toBe("open");
+  });
+
   it("shows taken when opponent exists and visitor is not participant", () => {
     const view = resolveChallengeView(
       makeChallenge({
