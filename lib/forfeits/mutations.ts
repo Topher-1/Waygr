@@ -56,6 +56,9 @@ export async function markForfeitPaid(
   if (record.status === "proof_submitted") {
     return { ok: true, value: record };
   }
+  if (record.kind === "custom") {
+    return { ok: false, reason: "wrong_state" };
+  }
   if (!canMarkDone(record, viewerProfileId)) {
     return { ok: false, reason: "wrong_state" };
   }
@@ -217,6 +220,7 @@ export async function rejectProof(
     .from("forfeits")
     .update({
       status: "owed",
+      proof_path: null,
       proof_submitted_at: null,
       proof_rejected_at: now.toISOString(),
     })
@@ -232,6 +236,7 @@ export async function rejectProof(
     value: {
       ...loaded.value,
       status: "owed",
+      proofPath: null,
       proofSubmittedAt: null,
       proofRejectedAt: now.toISOString(),
     },

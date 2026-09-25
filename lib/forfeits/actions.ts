@@ -55,7 +55,7 @@ export function canShareConcession(
   );
 }
 
-/** Loser may mark honor-system done (concession or custom without proof yet). */
+/** Loser may mark honor-system done for concession only (no proof upload). */
 export function canMarkDone(
   forfeit: ForfeitState,
   viewerProfileId: string | null,
@@ -63,7 +63,7 @@ export function canMarkDone(
   return (
     resolveForfeitRole(forfeit, viewerProfileId) === "loser" &&
     forfeit.status === "owed" &&
-    forfeit.kind !== "jersey_swap"
+    forfeit.kind === "concession"
   );
 }
 
