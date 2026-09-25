@@ -1,4 +1,5 @@
 import type { League } from "@/lib/scores/types";
+import { startOfLocalDay } from "@/lib/time/local-slate";
 
 export const DEFAULT_GAMES_WINDOW_DAYS = 7;
 export const MAX_GAMES_WINDOW_DAYS = 7;
@@ -33,7 +34,7 @@ export function parseGamesQuery(
     league = leagueRaw as League;
   }
 
-  const defaultFrom = now;
+  const defaultFrom = startOfLocalDay(now);
   const defaultTo = new Date(
     now.getTime() + DEFAULT_GAMES_WINDOW_DAYS * 24 * 60 * 60 * 1000,
   );

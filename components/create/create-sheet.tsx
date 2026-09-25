@@ -23,6 +23,10 @@ import {
 import { CustomForfeitChip } from "@/components/create/custom-forfeit-chip";
 import { screenCustomForfeit } from "@/lib/forfeit-screen";
 import { shareChallengeLink } from "@/lib/challenges/share-challenge";
+import {
+  excludePriorLocalDays,
+  groupGamesByLocalDay,
+} from "@/lib/time/local-slate";
 
 type GameItem = {
   id: string;
@@ -59,21 +63,6 @@ type Step = "game" | "market" | "side" | "line" | "forfeit" | "preview";
 type ForfeitMode = "presets" | "custom" | "custom_money";
 
 const LAST_FORFEIT_KEY = "waygr-last-forfeit";
-
-function groupGamesByDay(games: GameItem[]): Map<string, GameItem[]> {
-  const groups = new Map<string, GameItem[]>();
-  for (const game of games) {
-    const day = new Date(game.startsAt).toLocaleDateString(undefined, {
-      weekday: "long",
-      month: "short",
-      day: "numeric",
-    });
-    const list = groups.get(day) ?? [];
-    list.push(game);
-    groups.set(day, list);
-  }
-  return groups;
-}
 
 function GameSlateSkeleton() {
   return (
@@ -178,7 +167,8 @@ export function CreateSheet({
     setLoadingGames(true);
     const res = await fetch("/api/games");
     const body = (await res.json()) as { games?: GameItem[] };
-    setGames(body.games ?? []);
+    const now = new Date();
+    setGames(excludePriorLocalDays(body.games ?? [], now));
     setLoadingGames(false);
   }, []);
 
@@ -249,7 +239,7 @@ export function CreateSheet({
     }
   }, [open, quickGameId, games]);
 
-  const grouped = useMemo(() => groupGamesByDay(games), [games]);
+  const grouped = useMemo(() => groupGamesByLocalDay(games), [games]);
 
   function advanceFromMarket() {
     if (market === "quarter_winner") {
@@ -449,7 +439,7 @@ export function CreateSheet({
       aria-modal="true"
       aria-label={copy.create.pickGame}
     >
-      <div className="flex max-h-[90vh] w-full max-w-lg flex-col rounded-t-2xl border border-[var(--border)] bg-[var(--surface)] shadow-xl">
+      <div className="flex max-h-[90dvh] w-full max-w-lg flex-col rounded-t-2xl border border-[var(--border)] bg-[var(--surface)] shadow-xl">
         <div className="flex items-center justify-between border-b border-[var(--border)] px-5 py-4">
           <h2 className="font-[family-name:var(--font-barlow)] text-xl font-bold">
             {step === "game"
@@ -475,7 +465,7 @@ export function CreateSheet({
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-5 py-4">
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-4 pb-8">
           {error ? (
             <p className="mb-3 text-sm text-[var(--rose)]" role="alert">{error}</p>
           ) : null}
