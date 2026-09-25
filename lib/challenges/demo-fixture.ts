@@ -60,6 +60,7 @@ const base: ChallengeLanding = {
 /** Static challenges for /demo — no DB or auth required. */
 export const demoChallenges: Record<ChallengeView, ChallengeLanding> = {
   open: { ...base, state: "open", opponent: null },
+  waiting: { ...base, state: "open", opponent: null },
   taken: {
     ...base,
     state: "accepted",
@@ -127,6 +128,7 @@ export const demoChallenges: Record<ChallengeView, ChallengeLanding> = {
 
 export const demoViewOrder: ChallengeView[] = [
   "open",
+  "waiting",
   "taken",
   "live",
   "settled",

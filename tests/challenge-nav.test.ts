@@ -24,4 +24,23 @@ describe("challenge navigation escape hatch", () => {
     expect(clientSource).toMatch(/<Link[\s\S]*href="\/"/);
     expect(clientSource).toMatch(/copy\.home\.makeCall/);
   });
+
+  it("shows creator waiting view instead of accept CTAs", () => {
+    expect(clientSource).toMatch(/view === "waiting"/);
+    expect(clientSource).toMatch(/mode="waiting"/);
+    expect(clientSource).toMatch(/copy\.create\.share/);
+    expect(clientSource).toMatch(/copy\.home\.cancelCall/);
+    const waitingFooter = clientSource.match(
+      /view === "waiting" \? \([\s\S]*?\) : view === "open"/,
+    )?.[0];
+    expect(waitingFooter).toBeDefined();
+    expect(waitingFooter).not.toMatch(/copy\.challenge\.accept/);
+    expect(waitingFooter).not.toMatch(/handleImIn/);
+  });
+
+  it("wires Not this one to navigate home", () => {
+    expect(clientSource).toMatch(/function handleDecline/);
+    expect(clientSource).toMatch(/handleDecline[\s\S]*router\.push\("\/"\)/);
+    expect(clientSource).toMatch(/onClick=\{handleDecline\}/);
+  });
 });

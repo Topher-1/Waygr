@@ -13,7 +13,10 @@ import { ScoreStrip } from "@/components/challenge/score-strip";
 import { SignInSheet } from "@/components/auth/sign-in-sheet";
 import { Button } from "@/components/ui/button";
 import { BusyButton } from "@/components/ui/busy-button";
+import { shareChallengeLink } from "@/lib/challenges/share-challenge";
 import { voidReason } from "@/lib/challenges/views";
+import { CancelCallSheet } from "@/components/home/cancel-call-sheet";
+import { formatMatchup } from "@/lib/challenges/format";
 import { cardFileName, cardPath } from "@/lib/cards/content";
 import { shareCardImage } from "@/lib/share/share-card";
 import { resolveForfeitRole } from "@/lib/forfeits/actions";
@@ -53,6 +56,9 @@ export function ChallengeClient({
   const [loading, setLoading] = useState(false);
   const [sharingCard, setSharingCard] = useState(false);
   const [shareNote, setShareNote] = useState<string | null>(null);
+  const [sharing, setSharing] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
+  const [showCancel, setShowCancel] = useState(false);
 
   const viewerWon =
     viewer !== null &&
@@ -168,6 +174,10 @@ export function ChallengeClient({
     router.push("/");
   }
 
+  function handleDecline() {
+    router.push("/");
+  }
+
   async function handleShareResult() {
     if (demoMode || sharingCard) return;
     setSharingCard(true);
@@ -191,6 +201,41 @@ export function ChallengeClient({
     }
   }
 
+  async function handleWaitingShare() {
+    if (sharing) return;
+    setSharing(true);
+    setLinkCopied(false);
+    const url = `${window.location.origin}/c/${challenge.slug}`;
+    try {
+      const result = await shareChallengeLink({
+        title: copy.appName,
+        text: `${challenge.creator.displayName} has a waygr on the line.`,
+        url,
+      });
+      if (result === "copied") {
+        setLinkCopied(true);
+      }
+    } finally {
+      setSharing(false);
+    }
+  }
+
+  async function handleCancelConfirm() {
+    const res = await fetch(`/api/challenges/${challenge.id}/cancel`, {
+      method: "POST",
+    });
+    if (!res.ok) {
+      throw new Error("cancel_failed");
+    }
+    router.push("/");
+    router.refresh();
+  }
+
+  const shareLoadingLabel =
+    typeof navigator !== "undefined" && "share" in navigator
+      ? copy.create.sharing
+      : copy.create.copying;
+
   const voidCopy = () => {
     const reason = voidReason(challenge);
     if (reason === "expired") {
@@ -205,7 +250,38 @@ export function ChallengeClient({
     <>
       <ChallengeShell
         footer={
-          view === "open" && !accepted ? (
+          view === "waiting" ? (
+            <div className="flex flex-col gap-3">
+              <BusyButton
+                onClick={() => void handleWaitingShare()}
+                loading={sharing}
+                loadingLabel={shareLoadingLabel}
+                disabled={demoMode}
+                className="w-full"
+              >
+                {copy.create.share}
+              </BusyButton>
+              {linkCopied ? (
+                <p className="text-center text-sm text-[var(--green)]">
+                  {copy.create.linkCopied}
+                </p>
+              ) : null}
+              <Button
+                variant="ghost"
+                className="w-full"
+                disabled={sharing}
+                onClick={() => setShowCancel(true)}
+              >
+                {copy.home.cancelCall}
+              </Button>
+              <Link
+                href="/"
+                className="block w-full rounded-xl border border-[var(--border)] bg-[var(--raised)] px-5 py-3 text-center text-base font-semibold text-[var(--text)] transition-opacity hover:bg-[var(--surface)]"
+              >
+                {copy.home.makeCall}
+              </Link>
+            </div>
+          ) : view === "open" && !accepted ? (
             <div className="flex flex-col gap-3">
               {error ? (
                 <p className="text-center text-sm text-[var(--rose)]">{error}</p>
@@ -219,7 +295,12 @@ export function ChallengeClient({
               >
                 {copy.challenge.accept}
               </BusyButton>
-              <Button variant="ghost" className="w-full" disabled={loading}>
+              <Button
+                variant="ghost"
+                className="w-full"
+                disabled={loading}
+                onClick={handleDecline}
+              >
                 {copy.challenge.decline}
               </Button>
             </div>
@@ -233,6 +314,15 @@ export function ChallengeClient({
           ) : undefined
         }
       >
+        {view === "waiting" && (
+          <section className="space-y-4">
+            <p className="text-sm font-semibold uppercase tracking-wide text-[var(--muted)]">
+              {copy.challenge.waitingStatus}
+            </p>
+            <ChallengeHero challenge={challenge} mode="waiting" />
+          </section>
+        )}
+
         {view === "open" && !accepted && <ChallengeHero challenge={challenge} />}
 
         {view === "open" && accepted && (
@@ -320,12 +410,20 @@ export function ChallengeClient({
       </ChallengeShell>
 
       {!demoMode && (
-        <SignInSheet
-          open={showSignIn}
-          onClose={() => setShowSignIn(false)}
-          mode={signInMode}
-          onComplete={handleAuthComplete}
-        />
+        <>
+          <SignInSheet
+            open={showSignIn}
+            onClose={() => setShowSignIn(false)}
+            mode={signInMode}
+            onComplete={handleAuthComplete}
+          />
+          <CancelCallSheet
+            open={showCancel}
+            matchup={formatMatchup(challenge)}
+            onClose={() => setShowCancel(false)}
+            onConfirm={handleCancelConfirm}
+          />
+        </>
       )}
     </>
   );
