@@ -278,7 +278,7 @@ export function ChallengeClient({
                 href="/"
                 className="block w-full rounded-xl border border-[var(--border)] bg-[var(--raised)] px-5 py-3 text-center text-base font-semibold text-[var(--text)] transition-opacity hover:bg-[var(--surface)]"
               >
-                {copy.home.makeCall}
+                {copy.live.backHome}
               </Link>
             </div>
           ) : view === "open" && !accepted ? (

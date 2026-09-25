@@ -36,6 +36,8 @@ describe("challenge navigation escape hatch", () => {
     expect(waitingFooter).toBeDefined();
     expect(waitingFooter).not.toMatch(/copy\.challenge\.accept/);
     expect(waitingFooter).not.toMatch(/handleImIn/);
+    expect(waitingFooter).toMatch(/copy\.live\.backHome/);
+    expect(waitingFooter).not.toMatch(/copy\.home\.makeCall/);
   });
 
   it("wires Not this one to navigate home", () => {
