@@ -1,3 +1,4 @@
+import { buildCreateGamesOrFilter } from "@/lib/games/create-list";
 import { resolveTeamInfo } from "@/lib/teams/catalog";
 import { createScoreProvider } from "@/lib/scores";
 import { FixtureScoreProvider as FixtureProvider } from "@/lib/scores/fixture-provider";
@@ -140,9 +141,7 @@ export async function listStoredGames(
   let query = service
     .from("games")
     .select("id, league, starts_at, status, home_team, away_team")
-    .gte("starts_at", params.from.toISOString())
-    .lte("starts_at", params.to.toISOString())
-    .in("status", ["scheduled", "live"])
+    .or(buildCreateGamesOrFilter(params.from, params.to))
     .order("starts_at", { ascending: true });
 
   if (params.league) {

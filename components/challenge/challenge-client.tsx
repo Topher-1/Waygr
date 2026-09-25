@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
 import { copy } from "@/lib/copy";
@@ -130,6 +131,8 @@ export function ChallengeClient({
     return copy.result.void;
   };
 
+  const showHomeEscape = view === "live" || (view === "open" && accepted);
+
   return (
     <>
       <ChallengeShell
@@ -150,6 +153,13 @@ export function ChallengeClient({
                 {copy.challenge.decline}
               </Button>
             </div>
+          ) : showHomeEscape ? (
+            <Link
+              href="/"
+              className="block w-full rounded-xl border border-[var(--border)] bg-[var(--raised)] px-5 py-3 text-center text-base font-semibold text-[var(--text)] transition-opacity hover:bg-[var(--surface)]"
+            >
+              {copy.home.makeCall}
+            </Link>
           ) : undefined
         }
       >
