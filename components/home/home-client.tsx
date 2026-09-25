@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { SignInSheet } from "@/components/auth/sign-in-sheet";
 import { CreateSheet, type CreatePrefill } from "@/components/create/create-sheet";
 import { ScoreStrip } from "@/components/challenge/score-strip";
+import { CancelCallSheet } from "@/components/home/cancel-call-sheet";
 
 type HomeClientProps = {
   viewer: ViewerProfile | null;
@@ -22,6 +23,10 @@ export function HomeClient({ viewer, feed }: HomeClientProps) {
   const [showSignIn, setShowSignIn] = useState(false);
   const [prefill, setPrefill] = useState<CreatePrefill | null>(null);
   const [quickGameId, setQuickGameId] = useState<string | null>(null);
+  const [pendingCancel, setPendingCancel] = useState<{
+    id: string;
+    matchup: string;
+  } | null>(null);
 
   const openCreate = useCallback((opts?: { prefill?: CreatePrefill; gameId?: string }) => {
     if (!viewer) {
@@ -50,13 +55,14 @@ export function HomeClient({ viewer, feed }: HomeClientProps) {
     }
   }, [openCreate]);
 
-  async function handleCancel(challengeId: string) {
+  async function confirmCancel(challengeId: string) {
     const res = await fetch(`/api/challenges/${challengeId}/cancel`, {
       method: "POST",
     });
-    if (res.ok) {
-      window.location.reload();
+    if (!res.ok) {
+      throw new Error("cancel_failed");
     }
+    window.location.reload();
   }
 
   const tonightLabel =
@@ -206,9 +212,14 @@ export function HomeClient({ viewer, feed }: HomeClientProps) {
                       <Button
                         variant="ghost"
                         className="mt-2 text-sm"
-                        onClick={() => void handleCancel(challenge.id)}
+                        onClick={() =>
+                          setPendingCancel({
+                            id: challenge.id,
+                            matchup: formatMatchup(challenge),
+                          })
+                        }
                       >
-                        {copy.create.cancelChallenge}
+                        {copy.home.cancelCall}
                       </Button>
                     </li>
                   ))}
@@ -281,6 +292,16 @@ export function HomeClient({ viewer, feed }: HomeClientProps) {
         onComplete={() => {
           setShowSignIn(false);
           window.location.reload();
+        }}
+      />
+
+      <CancelCallSheet
+        open={pendingCancel !== null}
+        matchup={pendingCancel?.matchup ?? ""}
+        onClose={() => setPendingCancel(null)}
+        onConfirm={async () => {
+          if (!pendingCancel) return;
+          await confirmCancel(pendingCancel.id);
         }}
       />
     </>
