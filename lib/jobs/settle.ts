@@ -1,13 +1,13 @@
-import { settle, type Outcome } from '@/lib/settle';
-import { gameRowToSettleGame, isVoidStatus } from '@/lib/jobs/game-state';
-import { buildAtomicSettleParams } from '@/lib/jobs/settle-params';
+import { settle, type Outcome } from '@/lib/settle.ts';
+import { gameRowToSettleGame, isVoidStatus } from '@/lib/jobs/game-state.ts';
+import { buildAtomicSettleParams } from '@/lib/jobs/settle-params.ts';
 import type {
   AtomicSettleParams,
   AtomicSettleResult,
   ChallengeRow,
   GameRow,
   SettleResult,
-} from '@/lib/jobs/types';
+} from '@/lib/jobs/types.ts';
 
 export interface SettleStore {
   getGame(id: string): Promise<GameRow | undefined>;

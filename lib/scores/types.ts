@@ -1,4 +1,4 @@
-import type { GameStatus } from '@/lib/settle';
+import type { GameStatus } from '@/lib/settle.ts';
 
 export type League = 'nfl' | 'ncaaf' | 'nba' | 'ncaab' | 'mlb';
 

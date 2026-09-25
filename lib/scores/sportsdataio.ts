@@ -1,4 +1,4 @@
-import type { GameUpdate, GameUpsert, League, ScoreProvider } from '@/lib/scores/types';
+import type { GameUpdate, GameUpsert, League, ScoreProvider } from '@/lib/scores/types.ts';
 
 /**
  * Typed fallback stub — SportsDataIO is only used when Chris flips SCORE_PROVIDER.

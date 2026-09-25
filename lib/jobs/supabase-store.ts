@@ -1,13 +1,13 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
-import type { PollScoresStore } from '@/lib/jobs/poll-scores';
-import type { SettleStore } from '@/lib/jobs/settle';
-import type { SweepStore } from '@/lib/jobs/sweep';
+import type { PollScoresStore } from '@/lib/jobs/poll-scores.ts';
+import type { SettleStore } from '@/lib/jobs/settle.ts';
+import type { SweepStore } from '@/lib/jobs/sweep.ts';
 import type {
   AtomicSettleParams,
   AtomicSettleResult,
   ChallengeRow,
   GameRow,
-} from '@/lib/jobs/types';
+} from '@/lib/jobs/types.ts';
 
 type DbGame = {
   id: string;

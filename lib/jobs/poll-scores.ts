@@ -1,6 +1,6 @@
-import { BallDontLieProvider } from '@/lib/scores/balldontlie';
-import type { League, ScoreProvider } from '@/lib/scores/types';
-import type { GameRow, PollScoresResult } from '@/lib/jobs/types';
+import { BallDontLieProvider } from '@/lib/scores/balldontlie.ts';
+import type { League, ScoreProvider } from '@/lib/scores/types.ts';
+import type { GameRow, PollScoresResult } from '@/lib/jobs/types.ts';
 
 const FIFTEEN_MINUTES_MS = 15 * 60 * 1000;
 const TEN_MINUTES_MS = 10 * 60 * 1000;
@@ -31,7 +31,7 @@ async function fetchLiveUpdates(
   provider: ScoreProvider,
   league: League,
   providerGameIds: string[],
-): Promise<import('@/lib/scores/types').GameUpdate[]> {
+): Promise<import('@/lib/scores/types.ts').GameUpdate[]> {
   if (providerGameIds.length === 0) return [];
   if (provider instanceof BallDontLieProvider) {
     return provider.getLiveForLeague(league, providerGameIds);

@@ -1,5 +1,5 @@
-import type { Outcome } from '@/lib/settle';
-import type { AtomicSettleParams, ChallengeRow, GameRow } from '@/lib/jobs/types';
+import type { Outcome } from '@/lib/settle.ts';
+import type { AtomicSettleParams, ChallengeRow, GameRow } from '@/lib/jobs/types.ts';
 
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 

@@ -1,4 +1,4 @@
-import type { ChallengeRow, GameRow, SweepResult } from '@/lib/jobs/types';
+import type { ChallengeRow, GameRow, SweepResult } from '@/lib/jobs/types.ts';
 
 const SEVENTY_TWO_HOURS_MS = 72 * 60 * 60 * 1000;
 

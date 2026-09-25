@@ -1,10 +1,10 @@
-import { BallDontLieProvider } from '@/lib/scores/balldontlie';
-import { SportsDataIoProvider } from '@/lib/scores/sportsdataio';
-import type { ScoreProvider } from '@/lib/scores/types';
+import { BallDontLieProvider } from '@/lib/scores/balldontlie.ts';
+import { SportsDataIoProvider } from '@/lib/scores/sportsdataio.ts';
+import type { ScoreProvider } from '@/lib/scores/types.ts';
 
-export type { GameUpdate, GameUpsert, League, PeriodScore, ScoreProvider } from '@/lib/scores/types';
-export { BallDontLieProvider, mapBalldontlieGame, mapBalldontlieUpdate } from '@/lib/scores/balldontlie';
-export { SportsDataIoProvider } from '@/lib/scores/sportsdataio';
+export type { GameUpdate, GameUpsert, League, PeriodScore, ScoreProvider } from '@/lib/scores/types.ts';
+export { BallDontLieProvider, mapBalldontlieGame, mapBalldontlieUpdate } from '@/lib/scores/balldontlie.ts';
+export { SportsDataIoProvider } from '@/lib/scores/sportsdataio.ts';
 
 export function createScoreProvider(options?: {
   provider?: string;

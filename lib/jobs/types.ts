@@ -1,5 +1,5 @@
-import type { GameStatus, Market, Outcome, Pick } from '@/lib/settle';
-import type { League } from '@/lib/scores/types';
+import type { GameStatus, Market, Outcome, Pick } from '@/lib/settle.ts';
+import type { League } from '@/lib/scores/types.ts';
 
 export type ChallengeState =
   | 'open'

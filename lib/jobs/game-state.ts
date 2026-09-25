@@ -1,5 +1,5 @@
-import type { Game } from '@/lib/settle';
-import type { GameRow } from '@/lib/jobs/types';
+import type { Game } from '@/lib/settle.ts';
+import type { GameRow } from '@/lib/jobs/types.ts';
 
 export function gameRowToSettleGame(row: GameRow): Game {
   return {

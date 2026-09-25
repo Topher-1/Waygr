@@ -1,5 +1,5 @@
-import type { GameStatus } from '@/lib/settle';
-import type { GameUpdate, GameUpsert, League, PeriodScore, ScoreProvider } from '@/lib/scores/types';
+import type { GameStatus } from '@/lib/settle.ts';
+import type { GameUpdate, GameUpsert, League, PeriodScore, ScoreProvider } from '@/lib/scores/types.ts';
 
 const PROVIDER = 'balldontlie';
 const BASE_URL = 'https://api.balldontlie.io';
