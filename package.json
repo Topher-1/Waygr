@@ -7,6 +7,7 @@
     "build": "next build --turbopack",
     "start": "next start",
     "lint": "eslint",
+    "check:edge": "deno check --import-map=supabase/functions/import_map.json supabase/functions/poll-scores/index.ts supabase/functions/settle/index.ts supabase/functions/sweep/index.ts",
     "test": "vitest run",
     "test:replay": "vitest run tests/replay-nfl.test.ts lib/settle.test.ts",
     "test:watch": "vitest",
