@@ -273,12 +273,12 @@ export class MemoryStore implements PollScoresStore, SettleStore, SweepStore {
     return this.teamAbbrs.get(teamCode) ?? teamCode.split(':')[1] ?? teamCode;
   }
 
-  async listOpenChallengesPastKickoff(now: Date): Promise<ChallengeRow[]> {
+  async listOpenChallengesOnTerminalGames(): Promise<ChallengeRow[]> {
     return [...this.challenges.values()].filter((c) => {
       if (c.state !== 'open') return false;
       const game = this.games.get(c.gameId);
       if (!game) return false;
-      return new Date(game.startsAt) <= now;
+      return game.status !== 'scheduled' && game.status !== 'live';
     });
   }
 

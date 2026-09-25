@@ -3,7 +3,7 @@ import { MemoryStore } from '@/lib/jobs/memory-store';
 import { runSweep } from '@/lib/jobs/sweep';
 
 describe('sweep', () => {
-  it('expires open challenges past kickoff', async () => {
+  it('does not expire open challenges past kickoff while game is live', async () => {
     const now = new Date('2026-09-20T21:00:00.000Z');
     const store = new MemoryStore(now);
 
@@ -20,6 +20,49 @@ describe('sweep', () => {
       clock: null,
       homeScore: 0,
       awayScore: 0,
+      periodScores: [],
+      updatedAt: now.toISOString(),
+    });
+
+    store.seedChallenge({
+      id: 'open-1',
+      slug: 'open1',
+      creatorId: 'c',
+      opponentId: null,
+      gameId: 'g1',
+      market: 'winner',
+      creatorPick: 'home',
+      line: null,
+      quarter: null,
+      forfeitKind: 'concession',
+      forfeitText: null,
+      state: 'open',
+      outcome: null,
+      settledAt: null,
+    });
+
+    const result = await runSweep(store);
+    expect(result.expired).toBe(0);
+    expect(store.challenges.get('open-1')?.state).toBe('open');
+  });
+
+  it('expires open challenges when game is final', async () => {
+    const now = new Date('2026-09-20T23:00:00.000Z');
+    const store = new MemoryStore(now);
+
+    store.seedGame({
+      id: 'g1',
+      provider: 'fixture',
+      providerGameId: '1',
+      league: 'nfl',
+      homeTeam: 'nfl:KC',
+      awayTeam: 'nfl:BUF',
+      startsAt: '2026-09-20T20:25:00.000Z',
+      status: 'final',
+      period: 4,
+      clock: null,
+      homeScore: 24,
+      awayScore: 17,
       periodScores: [],
       updatedAt: now.toISOString(),
     });

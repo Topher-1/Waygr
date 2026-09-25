@@ -69,7 +69,7 @@ export type ChallengeLanding = {
 export type AcceptRejectReason =
   | "not_found"
   | "own_challenge"
-  | "past_kickoff"
+  | "game_over"
   | "taken"
   | "not_open"
   | "adult_required"

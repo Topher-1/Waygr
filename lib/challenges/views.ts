@@ -7,13 +7,10 @@ export function resolveChallengeView(
   challenge: ChallengeLanding,
   viewerProfileId: string | null,
 ): ChallengeView {
-  const kickoffPassed = new Date(challenge.game.startsAt) <= new Date();
-
   if (
     challenge.state === "void" ||
     challenge.state === "canceled" ||
-    challenge.state === "expired" ||
-    (challenge.state === "open" && kickoffPassed)
+    challenge.state === "expired"
   ) {
     return "void";
   }
@@ -49,7 +46,7 @@ export function resolveChallengeView(
 
 /** Void reason copy key for the void view. */
 export function voidReason(challenge: ChallengeLanding): string {
-  if (challenge.state === "expired" || challenge.state === "open") {
+  if (challenge.state === "expired") {
     return "expired";
   }
   if (challenge.game.status === "postponed") {

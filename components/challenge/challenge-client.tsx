@@ -69,8 +69,8 @@ export function ChallengeClient({
     setError(
       body.reason === "own_challenge"
         ? "You can't accept your own challenge."
-        : body.reason === "past_kickoff"
-          ? "Kickoff already passed."
+        : body.reason === "game_over"
+          ? "This game is over — can't accept now."
           : "Could not accept. Try again.",
     );
   }, [challenge.id, router]);
