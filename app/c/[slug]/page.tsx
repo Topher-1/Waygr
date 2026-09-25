@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { ChallengeClient } from "@/components/challenge/challenge-client";
 import { getChallengeBySlug } from "@/lib/challenges/queries";
 import { resolveChallengeView } from "@/lib/challenges/views";
-import { formatCall, formatForfeit } from "@/lib/challenges/format";
+import { formatCall } from "@/lib/challenges/format";
 import { getViewerProfile } from "@/lib/auth/profile";
 import { getForfeitForChallenge } from "@/lib/forfeits/queries";
 import { copy } from "@/lib/copy";
@@ -26,12 +26,9 @@ export async function generateMetadata({
       return { title: "Challenge not found" };
     }
 
-    const call = formatCall(challenge);
-    const forfeit = formatForfeit(challenge);
-    const title = copy.challenge.preview(
+    const title = copy.challenge.previewShareTitle(
       challenge.creator.displayName,
-      call,
-      forfeit,
+      formatCall(challenge),
     );
 
     return challengePreviewMetadata(title, slug);

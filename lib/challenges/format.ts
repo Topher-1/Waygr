@@ -126,6 +126,71 @@ export function formatMatchup(challenge: ChallengeLanding): string {
   return `${awayTeam.abbr} at ${homeTeam.abbr}`;
 }
 
+/**
+ * Characters that fit the OG eyebrow at ~40px inside the 1200px card
+ * with side padding. Longer lines are shortened in JS so Satori never
+ * clips a glyph.
+ */
+const OG_MATCHUP_MAX = 32;
+
+type OgTeam = { abbr: string; name: string };
+
+function readableOgSide(team: OgTeam): string {
+  const abbr = team.abbr.trim();
+  const name = team.name.trim();
+  if (!name || name.toUpperCase() === abbr.toUpperCase()) return abbr;
+  return name;
+}
+
+/** Collapse whitespace and end with an ellipsis once `max` is exceeded. */
+export function clampOgText(text: string, max: number): string {
+  const clean = text.replace(/\s+/g, " ").trim();
+  if (clean.length <= max) return clean;
+  if (max <= 1) return "…";
+  return `${clean.slice(0, max - 1).trimEnd()}…`;
+}
+
+function clampOgSide(side: string, max: number): string {
+  if (side.length <= max) return side;
+  return clampOgText(side, max);
+}
+
+/** Keep both sides visible: `AWAY @ HOME`, ellipsis on the long side. */
+function clampOgMatchup(away: string, home: string, max: number): string {
+  const sep = " @ ";
+  const line = `${away}${sep}${home}`;
+  if (line.length <= max) return line;
+  const budget = Math.max(3, max - sep.length);
+  let awayMax = Math.floor(budget / 2);
+  let homeMax = budget - awayMax;
+  if (away.length < awayMax) {
+    homeMax += awayMax - away.length;
+    awayMax = away.length;
+  } else if (home.length < homeMax) {
+    awayMax += homeMax - home.length;
+    homeMax = home.length;
+  }
+  return `${clampOgSide(away, awayMax)}${sep}${clampOgSide(home, homeMax)}`;
+}
+
+/**
+ * Link-preview matchup. Nicknames ("Panthers @ Browns") because a 3-letter
+ * code like CAR reads as a clipped word in the iMessage bubble.
+ * Abbreviations are the fallback when the nickname line would overflow.
+ */
+export function formatOgMatchup(challenge: ChallengeLanding): string {
+  const { homeTeam, awayTeam } = challenge.game;
+  const named = `${readableOgSide(awayTeam)} @ ${readableOgSide(homeTeam)}`;
+  if (named.length <= OG_MATCHUP_MAX) return named.toUpperCase();
+  const coded = `${awayTeam.abbr.trim()} @ ${homeTeam.abbr.trim()}`;
+  if (coded.length <= OG_MATCHUP_MAX) return coded.toUpperCase();
+  return clampOgMatchup(
+    awayTeam.abbr.trim(),
+    homeTeam.abbr.trim(),
+    OG_MATCHUP_MAX,
+  ).toUpperCase();
+}
+
 /** Kickoff in app display timezone (America/Chicago). */
 export function formatKickoff(iso: string): string {
   const d = new Date(iso);

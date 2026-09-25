@@ -10,6 +10,13 @@ export const copy = {
   challenge: {
     preview: (name: string, call: string, forfeit: string) =>
       `${name} says ${call}. Loser ${forfeit}. You in?`,
+    /**
+     * Link-preview title. iMessage prints this under the card, so it stays
+     * the pick — the image already shows the stake.
+     */
+    previewShareTitle: (name: string, call: string) => `${name} says ${call}`,
+    /** Second line for Slack/WhatsApp. Not the stake (the card has it). */
+    previewShareDescription: `Open in ${APP_NAME}`,
     previewForfeit: (forfeit: string) => `Loser ${forfeit}. You in?`,
     challengedYou: (name: string) => `${name} challenged you`,
     accept: "I'm in",

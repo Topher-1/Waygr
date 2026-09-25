@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { copy } from "@/lib/copy";
 
 /** Public production origin — link previews and metadata must use this host. */
 export const PRODUCTION_APP_ORIGIN = "https://waygr.vercel.app";
@@ -27,23 +28,30 @@ export function challengeOgImage(slug: string) {
   };
 }
 
-/** Challenge /c/[slug] metadata: hook in title only (WhatsApp shows title + description). */
+/**
+ * Challenge link tags.
+ * iMessage prints og:title under the image, so the title is the pick only.
+ * Description is a short CTA — Slack and WhatsApp show it, and it must not
+ * repeat the stake already drawn on the card. `null` is not enough: Next
+ * will refill an empty description from the title.
+ */
 export function challengePreviewMetadata(title: string, slug: string): Metadata {
   const ogImage = challengeOgImage(slug);
+  const description = copy.challenge.previewShareDescription;
 
   return {
     metadataBase: getMetadataBase(),
     title,
-    description: null,
+    description,
     openGraph: {
       title,
-      description: null,
+      description,
       images: [ogImage],
     },
     twitter: {
       card: "summary_large_image",
       title,
-      description: null,
+      description,
       images: [ogImage.url],
     },
   };
