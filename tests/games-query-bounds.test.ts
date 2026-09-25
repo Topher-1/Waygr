@@ -4,17 +4,21 @@ import {
   MAX_GAMES_WINDOW_DAYS,
   parseGamesQuery,
 } from "@/lib/games/query-bounds";
+import { startOfLocalDay } from "@/lib/time/local-slate";
 
 describe("parseGamesQuery", () => {
   const now = new Date("2026-09-20T12:00:00Z");
 
-  it("defaults to next 7 days", () => {
+  it("defaults from to start of local day and to next 7 days", () => {
     const result = parseGamesQuery(new URLSearchParams(), now);
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    expect(result.params.from.toISOString()).toBe(now.toISOString());
+    expect(result.params.from.toISOString()).toBe(
+      startOfLocalDay(now).toISOString(),
+    );
     const expectedTo = new Date(
-      now.getTime() + DEFAULT_GAMES_WINDOW_DAYS * 24 * 60 * 60 * 1000,
+      startOfLocalDay(now).getTime() +
+        DEFAULT_GAMES_WINDOW_DAYS * 24 * 60 * 60 * 1000,
     );
     expect(result.params.to.toISOString()).toBe(expectedTo.toISOString());
     expect(result.params.league).toBeNull();

@@ -1,4 +1,4 @@
-import { buildCreateGamesOrFilter } from "@/lib/games/create-list";
+import { buildCreateGamesOrFilter, isGameInCreateList } from "@/lib/games/create-list";
 import { resolveTeamInfo } from "@/lib/teams/catalog";
 import { createScoreProvider } from "@/lib/scores";
 import { FixtureScoreProvider as FixtureProvider } from "@/lib/scores/fixture-provider";
@@ -151,30 +151,38 @@ export async function listStoredGames(
   const { data, error } = await query;
   if (error) throw error;
 
-  return (data ?? []).map((row) => {
-    const home = resolveTeamInfo(row.home_team as string);
-    const away = resolveTeamInfo(row.away_team as string);
-    return {
-      id: row.id as string,
-      league: row.league as League,
-      startsAt: row.starts_at as string,
-      status: row.status as string,
-      homeTeam: {
-        code: home.code,
-        abbr: home.abbr,
-        name: home.name,
-        primaryColor: home.primaryColor,
-        secondaryColor: home.secondaryColor,
-      },
-      awayTeam: {
-        code: away.code,
-        abbr: away.abbr,
-        name: away.name,
-        primaryColor: away.primaryColor,
-        secondaryColor: away.secondaryColor,
-      },
-    };
-  });
+  return (data ?? [])
+    .map((row) => {
+      const home = resolveTeamInfo(row.home_team as string);
+      const away = resolveTeamInfo(row.away_team as string);
+      return {
+        id: row.id as string,
+        league: row.league as League,
+        startsAt: row.starts_at as string,
+        status: row.status as string,
+        homeTeam: {
+          code: home.code,
+          abbr: home.abbr,
+          name: home.name,
+          primaryColor: home.primaryColor,
+          secondaryColor: home.secondaryColor,
+        },
+        awayTeam: {
+          code: away.code,
+          abbr: away.abbr,
+          name: away.name,
+          primaryColor: away.primaryColor,
+          secondaryColor: away.secondaryColor,
+        },
+      };
+    })
+    .filter((game) =>
+      isGameInCreateList(
+        { status: game.status, startsAt: new Date(game.startsAt) },
+        params.from,
+        params.to,
+      ),
+    );
 }
 
 /** Sync schedule from ScoreProvider (when allowed) and return games in range. */
